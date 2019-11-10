@@ -106,7 +106,7 @@ int main()
         printf("server: got connection from %s\n", addr_str);
 
         // fork to handle connection
-        pid_t pid;
+        pid_t pid = fork();
 
         if (pid == 0) // child process
         {
