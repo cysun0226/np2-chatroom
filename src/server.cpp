@@ -111,10 +111,21 @@ int main()
         if (pid == 0) // child process
         {
             close(sockfd); // child does not need listener
+            
+            close(STDOUT_FILENO);
+            close(STDIN_FILENO);
+            close(STDERR_FILENO);
 
-            if (send(new_fd, "Hellllo~", 9, 0) < 0){
-                perror("server: send to client error");
+            if (dup(new_fd) != STDIN_FILENO || dup(new_fd) != STDOUT_FILENO || dup(new_fd) != STDERR_FILENO){
+                std::cout << "can't dup socket for stdin/out/err" << std::endl;
+                exit(1);
             }
+
+            // dup2(new_fd, STDOUT_FILENO);  // redirect stdout to new_fd
+
+            execlp("bin/npshell", "bin/npshell", (char*) NULL);
+
+            //  
 
             close(new_fd);
             exit(0);

@@ -58,13 +58,23 @@ int main(int argc, char *argv[])
 
     freeaddrinfo(servinfo);
 
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-        perror("client: can't recv");
+    close(STDOUT_FILENO);
+    close(STDIN_FILENO);
+    close(STDERR_FILENO);
+
+    if (dup(sockfd) != STDIN_FILENO || dup(sockfd) != STDOUT_FILENO || dup(sockfd) != STDERR_FILENO){
+        std::cout << "can't dup socket for stdin/out/err" << std::endl;
         exit(1);
     }
 
-    buf[numbytes] = '\0';
-    printf("client: received '%s'\n",buf);
+
+    // if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+    //     perror("client: can't recv");
+    //     exit(1);
+    // }
+
+    // buf[numbytes] = '\0';
+    // printf("client: received '%s'\n",buf);
 
     close(sockfd);
 

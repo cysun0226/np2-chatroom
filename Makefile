@@ -1,3 +1,6 @@
+SRC_DIR = src
+OBJ_DIR = obj
+
 objects = npshell.o parse.o execute.o
 
 npshell : $(objects)
