@@ -36,4 +36,6 @@ typedef struct {
     int out_target;
 } Pipe;
 
+int npshell();
+
 #endif

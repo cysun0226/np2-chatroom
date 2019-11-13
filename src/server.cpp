@@ -1,4 +1,5 @@
 #include "../include/server.h"
+#include "../include/npshell.h" 
 
 
 void sig_handler(int s)
@@ -123,7 +124,14 @@ int main()
 
             // dup2(new_fd, STDOUT_FILENO);  // redirect stdout to new_fd
 
-            execlp("bin/npshell", "bin/npshell", (char*) NULL);
+            // std::cout << "hi~~" << std::endl;
+            // std::string usr_input;
+            // std::cin >> usr_input;
+            // std::cout << "you type: " << usr_input << std::endl;
+
+            npshell();
+
+            // execlp("bin/npshell", "bin/npshell", (char*) NULL);
 
             //  
 

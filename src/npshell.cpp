@@ -1,6 +1,6 @@
-#include "npshell.h" 
-#include "parse.h"
-#include "execute.h" 
+#include "../include/npshell.h" 
+#include "../include/parse.h"
+#include "../include/execute.h" 
 
 
 
@@ -82,8 +82,7 @@ int get_cmd(){
 }
 
 
-
-int main(int argc, char *argv[], char *envp[]){
+int npshell(){
   // set PATH
   char default_path[] = "PATH=bin:.";
   putenv(default_path);
@@ -95,3 +94,17 @@ int main(int argc, char *argv[], char *envp[]){
   
   return 0;
 }
+
+
+// int main(int argc, char *argv[], char *envp[]){
+//   // set PATH
+//   char default_path[] = "PATH=bin:.";
+//   putenv(default_path);
+
+//   int status;
+//   do{
+//     status = get_cmd();
+//   } while (status == SUCCESS);
+  
+//   return 0;
+// }
