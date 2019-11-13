@@ -15,6 +15,16 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+void *get_in_port(struct sockaddr *sa)
+{
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in*)sa)->sin_port);
+    }
+    return &(((struct sockaddr_in6*)sa)->sin6_port);
+}
+
+
+
 int main()
 {
     int status;
@@ -94,7 +104,9 @@ int main()
     // loop of accept
     socklen_t addr_size;
     struct sockaddr_storage client_addr;
-    char addr_str[INET6_ADDRSTRLEN];
+    char ip_str[NI_MAXHOST];
+    char port_str[NI_MAXSERV];
+
     while (1){
         addr_size = sizeof client_addr;
         new_fd = accept(sockfd, (struct sockaddr *)&client_addr, &addr_size);
@@ -102,9 +114,19 @@ int main()
             perror("server: open accept fd failed");
         }
         
-        // ip to printable
-        inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr), addr_str, sizeof addr_str);
-        printf("server: got connection from %s\n", addr_str);
+        // get client ip and port
+        if (getnameinfo((struct sockaddr *)&client_addr, 
+            addr_size, ip_str, sizeof(ip_str), port_str, sizeof(port_str), 
+            NI_NUMERICHOST | NI_NUMERICSERV) == 0){
+            printf("server: got connection from %s:%s\n", ip_str, port_str);
+        }
+        else {
+            printf("server: can't get client ip and port\n");
+        }
+        
+
+
+        
 
         // fork to handle connection
         pid_t pid = fork();
