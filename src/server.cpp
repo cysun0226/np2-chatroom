@@ -2,6 +2,11 @@
 #include "../include/npshell.h" 
 
 
+// variables ---------------------------------------------------------------------
+std::vector<User> user_table;
+
+// functions ---------------------------------------------------------------------
+
 void sig_handler(int s)
 {
     while(waitpid(-1, NULL, WNOHANG) > 0);
@@ -23,7 +28,45 @@ void *get_in_port(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_port);
 }
 
+int add_user(std::string ip, std::string port){
+    int new_user_id;
+    
+    // find the smallest unused id
+    std::vector <int> used_id;
+    for (size_t i = 0; i < user_table.size(); i++){
+        used_id.push_back(user_table[i].id);
+    }
+    
+    for (size_t i = 1; i < 30; i++){
+        // if i not in used_id
+        if (std::find(used_id.begin(), used_id.end(), i) == used_id.end()){
+            new_user_id = i;
+            break;
+        }
+    }
 
+    User new_user;
+    new_user.id = new_user_id;
+    new_user.ip = ip;
+    new_user.port = port;
+    user_table.push_back(new_user);
+
+    return new_user_id;
+}
+
+void remove_user(int id){
+    // std::cout << "remove user " << id << std::endl;
+    for (size_t i = 0; i < user_table.size(); i++){
+        if (user_table[i].id == id){
+            std::cout << "remove user " << id << std::endl;
+            user_table.erase(user_table.begin() + i);
+            break;
+        }
+    }
+    std::cout << "user_table.size() = " << user_table.size() << std::endl;
+}
+
+// main ---------------------------------------------------------------------
 
 int main()
 {
@@ -123,9 +166,9 @@ int main()
         else {
             printf("server: can't get client ip and port\n");
         }
-        
 
-
+        // add user to user_table
+        int user_id = add_user(std::string(ip_str), std::string(port_str));
         
 
         // fork to handle connection
@@ -151,13 +194,13 @@ int main()
             // std::cin >> usr_input;
             // std::cout << "you type: " << usr_input << std::endl;
 
-            npshell();
+            npshell(user_id);
 
             // execlp("bin/npshell", "bin/npshell", (char*) NULL);
 
-            //  
-
             close(new_fd);
+            remove_user(user_id);
+
             exit(0);
         }
 

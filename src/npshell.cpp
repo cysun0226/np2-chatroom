@@ -3,8 +3,7 @@
 #include "../include/execute.h" 
 
 
-
-int get_cmd(){
+int get_cmd(int id){
   int status = SUCCESS;
   bool use_src = false;
 
@@ -16,7 +15,7 @@ int get_cmd(){
   std::getline(std::cin, usr_input);
 
   // if EOF or exit
-  if (std::cin.eof() || usr_input == "exit"){
+  if (std::cin.eof() || usr_input.substr(0, 4) == "exit"){
     clean_up();
     return EXIT;
   }
@@ -52,8 +51,13 @@ int get_cmd(){
       = parse_cmd(line); 
       // exec
       exec_cmds(parsed_cmd);
-    }
-    
+    } 
+  }
+
+  // who
+  if (usr_input.substr(0, 3) == "who"){
+    who(id);
+    return SUCCESS;
   }
   
 
@@ -82,14 +86,14 @@ int get_cmd(){
 }
 
 
-int npshell(){
+int npshell(int id){
   // set PATH
   char default_path[] = "PATH=bin:.";
   putenv(default_path);
 
   int status;
   do{
-    status = get_cmd();
+    status = get_cmd(id);
   } while (status == SUCCESS);
   
   return 0;

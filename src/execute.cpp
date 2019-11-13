@@ -1,4 +1,5 @@
 #include "../include/execute.h"
+#include "../include/server.h"
 
 std::vector<Pipe> pipe_table;
 std::vector< std::pair <int*, int> > table_delete;
@@ -364,4 +365,18 @@ std::string get_cmd_from_source(std::string f_name){
 void restore_src_table(){
   pipe_table.clear();
   pipe_table.assign(pipe_table_bk.begin(), pipe_table_bk.end()); 
+}
+
+void who(int id){
+  std::cout << "<ID>\t" << "<nickname>\t" << "<IP:port>\t" << "<indicate me>" << std::endl;
+  for (size_t i = 0; i < user_table.size(); i++){
+    std::cout << user_table[i].id << "\t" 
+              << user_table[i].name << "\t"
+              << user_table[i].ip << ":"
+              << user_table[i].port;
+    if (user_table[i].id == id){
+      std::cout << "\t<-me";
+    }
+    std::cout << std::endl;
+  }
 }
