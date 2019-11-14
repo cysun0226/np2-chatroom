@@ -96,7 +96,6 @@ int main()
     // User* shm = (std::vector<User>*)shmat(shm_id, NULL, 0);
     
     User* user_table = (User*)shmat(shm_id, NULL, 0);
-    std::cout << "init_user_table" << std::endl;
     init_user_table(user_table);
     
     int status;

@@ -383,6 +383,19 @@ void who(int id, User* user_table){
   }
 }
 
+void name(std::string usr_input, int id, User* user_table) {
+  std::stringstream ss;
+  ss.str(usr_input);
+  std::string name;
+  ss >> name;  
+  for (size_t i = 0; i < MAX_USER_NUM; i++){
+    if (user_table[i].id == id){
+      strcpy(user_table[i].name, name.c_str());
+      break;
+    }
+  }
+}
+
 // build-in cmd ---------------------------------------------------------------------------------------
 
 int build_in_cmd(std::string usr_input, int id, User* user_table){ 
@@ -410,6 +423,12 @@ int build_in_cmd(std::string usr_input, int id, User* user_table){
   // who
   if (usr_input.substr(0, 3) == "who"){
     who(id, user_table);
+    return SUCCESS;
+  }
+
+  // name
+  if (usr_input.substr(0, 4) == "name"){
+    name(usr_input.substr(5), id, user_table);
     return SUCCESS;
   }
 
