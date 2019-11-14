@@ -3,9 +3,11 @@
 #include "../include/execute.h" 
 #include "../include/server.h"
 
+void receive_broadcast(int signum) {
+   std::cout << "*** broadcast ***" << std::endl;
+}
 
-
-int get_cmd(int id, User* user_table){
+int get_cmd(ConnectInfo info){
   int status = SUCCESS;
   bool use_src = false;
 
@@ -17,7 +19,7 @@ int get_cmd(int id, User* user_table){
   std::getline(std::cin, usr_input);
 
   // check if built commands
-  status = build_in_cmd(usr_input, id, user_table);
+  status = build_in_cmd(usr_input, info);
   if (status != EXECUTE){
     return status;
   }
@@ -40,14 +42,14 @@ int get_cmd(int id, User* user_table){
 }
 
 
-int npshell(int id, User* user_table){
+int npshell(ConnectInfo info){
   // set PATH
   char default_path[] = "PATH=bin:.";
   putenv(default_path);
 
   int status;
   do{
-    status = get_cmd(id, user_table);
+    status = get_cmd(info);
   } while (status == SUCCESS);
   
   return 0;

@@ -37,6 +37,6 @@ typedef struct {
     int out_target;
 } Pipe;
 
-int npshell(int id, User* user_table);
+int npshell(ConnectInfo info);
 
 #endif

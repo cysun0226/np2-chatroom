@@ -5,8 +5,19 @@
 // variables ---------------------------------------------------------------------
 // std::vector<User> user_table;
 // std::vector<User>* user_table;
+User* user_table;
+int shm_id;
+char* broadcast_buf;
+int broadcast_shm_id;
 
 // functions ---------------------------------------------------------------------
+void close_handler(int s) {
+    std::cout << "server close..." << std::endl;
+    shmdt(user_table);
+    shmctl(shm_id, IPC_RMID, NULL);
+    exit(0);
+}
+
 
 void sig_handler(int s)
 {
@@ -84,19 +95,26 @@ void remove_user(User* user_table, int id){
 
 int main()
 {
-    // locate the user_table share memory
-    int shm_id;
+    // regist the ctrl-c exit
+    signal(SIGINT, close_handler);
+    
+    // locate the share memory
     shm_id = shmget(IPC_PRIVATE, (MAX_USER_NUM+10) * sizeof(User), IPC_CREAT | 0600);
     if (shm_id < 0){
         printf("shmget error");
         exit(-1);
     }
+    broadcast_shm_id = shmget(IPC_PRIVATE, 200 * sizeof(char), IPC_CREAT | 0600);
+    if (broadcast_shm_id < 0){
+        printf("broadcast shmget error");
+        exit(-1);
+    }
+
     // attach the shared memory
-    // user_table = (std::vector<User>*)shmat(shm_id, NULL, 0);
-    // User* shm = (std::vector<User>*)shmat(shm_id, NULL, 0);
-    
-    User* user_table = (User*)shmat(shm_id, NULL, 0);
+    user_table = (User*)shmat(shm_id, NULL, 0);
+    broadcast_buf = (char*)shmat(broadcast_shm_id, NULL, 0);
     init_user_table(user_table);
+    memset(broadcast_buf, 0, 200);
     
     int status;
 
@@ -227,13 +245,21 @@ int main()
 
             // execute shell
             user_table = (User*)shmat(shm_id, NULL, 0);
-            npshell(user_id, user_table);
+            broadcast_buf = (char*)shmat(broadcast_shm_id, NULL, 0);
+            ConnectInfo info = {
+                .id = user_id,
+                .user_table = user_table,
+                .broadcast_buf = broadcast_buf
+            };
+            
+            npshell(info);
 
             // execlp("bin/npshell", "bin/npshell", (char*) NULL);
 
             close(new_fd);
             remove_user(user_table, user_id);
             shmdt(user_table);
+            shmdt(broadcast_buf);
 
             exit(0);
         }

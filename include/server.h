@@ -24,6 +24,11 @@ typedef struct {
     char port[NI_MAXSERV];
 } User;
 
+typedef struct {
+    int id;
+    User* user_table;
+    char* broadcast_buf;
+} ConnectInfo;
 
 // extern std::vector<User>* user_table;
 #define MAX_USER_NUM 30
