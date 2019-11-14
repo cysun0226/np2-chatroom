@@ -382,3 +382,36 @@ void who(int id, User* user_table){
     }
   }
 }
+
+// build-in cmd ---------------------------------------------------------------------------------------
+
+int build_in_cmd(std::string usr_input, int id, User* user_table){ 
+  // if EOF or exit
+  if (std::cin.eof() || usr_input.substr(0, 4) == "exit"){
+    clean_up();
+    return EXIT;
+  }
+
+  // env command
+  if (usr_input.substr(0, 6) == "setenv"){
+    set_env(usr_input.substr(7));
+    update_up_target();
+    return SUCCESS;
+  }
+  if (usr_input.substr(0, 8) == "printenv"){
+    std::string env_var = print_env(usr_input.substr(9));
+    if (env_var != ""){
+      std::cout << env_var << std::endl; 
+    }
+    update_up_target();
+    return SUCCESS;
+  }
+
+  // who
+  if (usr_input.substr(0, 3) == "who"){
+    who(id, user_table);
+    return SUCCESS;
+  }
+
+  return EXECUTE;
+}

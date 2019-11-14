@@ -16,7 +16,7 @@
 
 #define PROMPT_SYMBOL "%" 
 #define PIPE_BUFFER_SIZE 15000
-enum Status{SUCCESS, EXIT, ERROR};
+enum Status{SUCCESS, EXIT, ERROR, EXECUTE};
 enum {READ, WRITE};
 enum {PIPE_STDOUT=-1};
 

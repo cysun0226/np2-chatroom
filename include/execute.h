@@ -37,4 +37,6 @@ void restore_src_table();
 
 void who(int id, User* user_table);
 
+int build_in_cmd(std::string usr_input, int id, User* user_table);
+
 #endif
