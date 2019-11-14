@@ -23,6 +23,8 @@ typedef struct {
     char ip[NI_MAXHOST];
     char port[NI_MAXSERV];
     pid_t pid;
+    int fd;
+    bool clear;
 } User;
 
 typedef struct {

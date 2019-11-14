@@ -18,12 +18,28 @@ void close_handler(int s) {
     exit(0);
 }
 
+void remove_user_handler(int s) {
+    for (size_t i = 0; i < MAX_USER_NUM; i++){
+        if (user_table[i].id == -1 && user_table[i].clear != true){
+            std::cout << "remove user " << i << std::endl;
+            close(user_table[i].fd);
+            user_table[i].clear = true;
+        }
+    }
+}
+
 void broadcast(std::string msg){
     // std::cout << msg << std::endl;
     // raise(SIGUSR1);
+    // for (size_t i = 0; i < MAX_USER_NUM; i++){
+    //     if (user_table[i].id != -1){
+    //         kill(user_table[i].pid, SIGUSR1);
+    //     }
+    // }
     for (size_t i = 0; i < MAX_USER_NUM; i++){
         if (user_table[i].id != -1){
-            kill(user_table[i].pid, SIGUSR1);
+            // std::cout << "user_table[" << i << "].fd = " << user_table[i].fd << std::endl;
+            send(user_table[i].fd, msg.c_str(), msg.size(), 0);
         }
     }
 }
@@ -55,6 +71,7 @@ void *get_in_port(struct sockaddr *sa)
 void init_user_table(User* user_table){
     for (size_t i = 0; i < MAX_USER_NUM; i++){
         user_table[i].id = -1;
+        user_table[i].clear = true;
     }
 }
 
@@ -91,7 +108,7 @@ int add_user(User* user_table, char* ip, char* port){
     return new_user_id;
 }
 
-void update_user_pid(int id, pid_t pid, User* user_table){
+void update_user_table(int id, pid_t pid, int fd, User* user_table){
     if (pid == 0){
         return;
     }
@@ -99,6 +116,8 @@ void update_user_pid(int id, pid_t pid, User* user_table){
     for (size_t i = 0; i < MAX_USER_NUM; i++){
         if (user_table[i].id == id){
             user_table[i].pid = pid;
+            user_table[i].fd = fd;
+            user_table[i].clear = false;
             return;
         }
     }
@@ -109,7 +128,6 @@ void remove_user(User* user_table, int id){
     for (size_t i = 0; i < MAX_USER_NUM; i++){
         // std::cout << "user[i].id = " << user_table[i].id << " id = " << id << std::endl;
         if (user_table[i].id == id){
-            // std::cout << "remove user " << id << std::endl;
             user_table[i].id = -1;
             break;
         }
@@ -122,7 +140,7 @@ int main()
 {
     // regist the ctrl-c exit
     signal(SIGINT, close_handler);
-    signal(SIGUSR1, SIG_IGN);
+    signal(SIGUSR1, remove_user_handler);
     
     // locate the share memory
     shm_id = shmget(IPC_PRIVATE, (MAX_USER_NUM+10) * sizeof(User), IPC_CREAT | 0600);
@@ -243,12 +261,15 @@ int main()
         int user_id = add_user(user_table, ip_str, port_str);
 
         // fork to handle connection
+        std::cout << "new_fd = " << new_fd << std::endl;
+        pid_t ppid = getpid();
         pid_t pid = fork();
-        update_user_pid(user_id, pid, user_table);
+        update_user_table(user_id, pid, new_fd, user_table);
 
         if (pid == 0) // child process
         {
             close(sockfd); // child does not need listener
+            signal(SIGUSR1, SIG_IGN);
             
             close(STDOUT_FILENO);
             close(STDIN_FILENO);
@@ -270,10 +291,10 @@ int main()
             std::cout << welcome_msg << std::endl;
 
             // broadcast receiver
-            signal(SIGUSR1, receive_broadcast);
+            // signal(SIGUSR1, receive_broadcast);
 
             // broadcast login
-            broadcast("");
+            broadcast("user login\n");
 
             // execute shell
             user_table = (User*)shmat(shm_id, NULL, 0);
@@ -286,19 +307,20 @@ int main()
             
             npshell(info);
 
-            broadcast("user exit");
+            broadcast("user exit\n");
 
             // execlp("bin/npshell", "bin/npshell", (char*) NULL);
 
             close(new_fd);
             remove_user(user_table, user_id);
+            kill(ppid, SIGUSR1);
             shmdt(user_table);
             shmdt(broadcast_buf);
 
             exit(0);
         }
 
-        close(new_fd);
+        // close(new_fd);
         
 
 
