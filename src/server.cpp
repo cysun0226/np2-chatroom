@@ -217,12 +217,15 @@ int main()
 
             // dup2(new_fd, STDOUT_FILENO);  // redirect stdout to new_fd
 
-            // std::cout << "hi~~" << std::endl;
-            // std::string usr_input;
-            // std::cin >> usr_input;
-            // std::cout << "you type: " << usr_input << std::endl;
+            // show welcome message
+            std::string welcome_msg = 
+            "****************************************\n"
+            "** Welcome to the information server. **\n"
+            "****************************************";
+            
+            std::cout << welcome_msg << std::endl;
 
-            // user_table = (std::vector<User>*)shmat(shm_id, NULL, 0);
+            // execute shell
             user_table = (User*)shmat(shm_id, NULL, 0);
             npshell(user_id, user_table);
 
