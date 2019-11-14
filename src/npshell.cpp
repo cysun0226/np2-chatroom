@@ -3,9 +3,7 @@
 #include "../include/execute.h" 
 #include "../include/server.h"
 
-void receive_broadcast(int signum) {
-   std::cout << "*** broadcast ***" << std::endl;
-}
+
 
 int get_cmd(ConnectInfo info){
   int status = SUCCESS;
@@ -43,6 +41,7 @@ int get_cmd(ConnectInfo info){
 
 
 int npshell(ConnectInfo info){
+
   // set PATH
   char default_path[] = "PATH=bin:.";
   putenv(default_path);

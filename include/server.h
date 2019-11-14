@@ -22,6 +22,7 @@ typedef struct {
     char name[30];
     char ip[NI_MAXHOST];
     char port[NI_MAXSERV];
+    pid_t pid;
 } User;
 
 typedef struct {
@@ -29,6 +30,8 @@ typedef struct {
     User* user_table;
     char* broadcast_buf;
 } ConnectInfo;
+
+void broadcast(std::string);
 
 // extern std::vector<User>* user_table;
 #define MAX_USER_NUM 30

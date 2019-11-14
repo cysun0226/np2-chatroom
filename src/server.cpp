@@ -18,10 +18,22 @@ void close_handler(int s) {
     exit(0);
 }
 
+void broadcast(std::string msg){
+    // std::cout << msg << std::endl;
+    // raise(SIGUSR1);
+    for (size_t i = 0; i < MAX_USER_NUM; i++){
+        if (user_table[i].id != -1){
+            kill(user_table[i].pid, SIGUSR1);
+        }
+    }
+}
 
-void sig_handler(int s)
-{
+void sig_handler(int s){
     while(waitpid(-1, NULL, WNOHANG) > 0);
+}
+
+void receive_broadcast(int signum) {
+   std::cout << "*** broadcast ***" << std::endl;
 }
 
 void *get_in_addr(struct sockaddr *sa)
@@ -79,6 +91,19 @@ int add_user(User* user_table, char* ip, char* port){
     return new_user_id;
 }
 
+void update_user_pid(int id, pid_t pid, User* user_table){
+    if (pid == 0){
+        return;
+    }
+    
+    for (size_t i = 0; i < MAX_USER_NUM; i++){
+        if (user_table[i].id == id){
+            user_table[i].pid = pid;
+            return;
+        }
+    }
+}
+
 void remove_user(User* user_table, int id){
     // std::cout << "remove user " << id << std::endl;
     for (size_t i = 0; i < MAX_USER_NUM; i++){
@@ -97,6 +122,7 @@ int main()
 {
     // regist the ctrl-c exit
     signal(SIGINT, close_handler);
+    signal(SIGUSR1, SIG_IGN);
     
     // locate the share memory
     shm_id = shmget(IPC_PRIVATE, (MAX_USER_NUM+10) * sizeof(User), IPC_CREAT | 0600);
@@ -215,10 +241,10 @@ int main()
 
         // add user to user_table
         int user_id = add_user(user_table, ip_str, port_str);
-        
 
         // fork to handle connection
         pid_t pid = fork();
+        update_user_pid(user_id, pid, user_table);
 
         if (pid == 0) // child process
         {
@@ -243,6 +269,12 @@ int main()
             
             std::cout << welcome_msg << std::endl;
 
+            // broadcast receiver
+            signal(SIGUSR1, receive_broadcast);
+
+            // broadcast login
+            broadcast("");
+
             // execute shell
             user_table = (User*)shmat(shm_id, NULL, 0);
             broadcast_buf = (char*)shmat(broadcast_shm_id, NULL, 0);
@@ -253,6 +285,8 @@ int main()
             };
             
             npshell(info);
+
+            broadcast("user exit");
 
             // execlp("bin/npshell", "bin/npshell", (char*) NULL);
 
