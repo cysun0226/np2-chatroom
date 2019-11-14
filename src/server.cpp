@@ -31,17 +31,18 @@ void remove_user_handler(int s) {
 void broadcast(std::string msg){
     // std::cout << msg << std::endl;
     // raise(SIGUSR1);
-    // for (size_t i = 0; i < MAX_USER_NUM; i++){
-    //     if (user_table[i].id != -1){
-    //         kill(user_table[i].pid, SIGUSR1);
-    //     }
-    // }
+    strcpy(broadcast_buf, msg.c_str());
     for (size_t i = 0; i < MAX_USER_NUM; i++){
         if (user_table[i].id != -1){
-            std::cout << "user_table[" << i << "].fd = " << user_table[i].fd << std::endl;
-            send(user_table[i].fd, msg.c_str(), msg.size(), 0);
+            kill(user_table[i].pid, SIGUSR1);
         }
     }
+    // for (size_t i = 0; i < MAX_USER_NUM; i++){
+    //     if (user_table[i].id != -1){
+    //         std::cout << "user_table[" << i << "].fd = " << user_table[i].fd << std::endl;
+    //         send(user_table[i].fd, msg.c_str(), msg.size(), 0);
+    //     }
+    // }
 }
 
 void sig_handler(int s){
@@ -49,7 +50,7 @@ void sig_handler(int s){
 }
 
 void receive_broadcast(int signum) {
-   std::cout << "*** broadcast ***" << std::endl;
+   std::cout << broadcast_buf << std::endl;
 }
 
 void *get_in_addr(struct sockaddr *sa)
@@ -277,7 +278,8 @@ int main()
         if (pid == 0) // child process
         {
             close(sockfd); // child does not need listener
-            signal(SIGUSR1, SIG_IGN);
+            // signal(SIGUSR1, SIG_IGN);
+            signal(SIGUSR1, receive_broadcast);
             
             close(STDOUT_FILENO);
             close(STDIN_FILENO);
@@ -304,7 +306,7 @@ int main()
             // broadcast login
             std::string login_msg;
             login_msg = "*** User '(no name)' entered from " + std::string(ip_str) + \
-                        ":" + std::string(port_str) + ". ***\n";
+                        ":" + std::string(port_str) + ". ***";
             broadcast(login_msg);
 
             // execute shell
@@ -319,7 +321,7 @@ int main()
             npshell(info);
 
             std::string left_msg = \
-            "*** User '" + get_user_name(user_id, user_table) + "' left. ***\n";
+            "*** User '" + get_user_name(user_id, user_table) + "' left. ***";
             broadcast(left_msg);
 
             // execlp("bin/npshell", "bin/npshell", (char*) NULL);

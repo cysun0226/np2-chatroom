@@ -404,7 +404,7 @@ void name(std::string usr_input, int id, User* user_table) {
       strcpy(user_table[i].name, name.c_str());
       std::string name_msg = 
       "*** User from " + std::string(user_table[i].ip) + ":" + \
-      std::string(user_table[i].port) + " is named '" + name + "'. ***\n";
+      std::string(user_table[i].port) + " is named '" + name + "'. ***";
       broadcast(name_msg);
       break;
     }
