@@ -1,9 +1,10 @@
 #include "../include/npshell.h" 
 #include "../include/parse.h"
 #include "../include/execute.h" 
+#include "../include/server.h"
 
 
-int get_cmd(int id){
+int get_cmd(int id, User* user_table){
   int status = SUCCESS;
   bool use_src = false;
 
@@ -56,7 +57,7 @@ int get_cmd(int id){
 
   // who
   if (usr_input.substr(0, 3) == "who"){
-    who(id);
+    who(id, user_table);
     return SUCCESS;
   }
   
@@ -86,14 +87,14 @@ int get_cmd(int id){
 }
 
 
-int npshell(int id){
+int npshell(int id, User* user_table){
   // set PATH
   char default_path[] = "PATH=bin:.";
   putenv(default_path);
 
   int status;
   do{
-    status = get_cmd(id);
+    status = get_cmd(id, user_table);
   } while (status == SUCCESS);
   
   return 0;

@@ -35,6 +35,6 @@ std::string get_cmd_from_source(std::string f_name);
 
 void restore_src_table();
 
-void who(int id);
+void who(int id, User* user_table);
 
 #endif

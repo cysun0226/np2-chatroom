@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <utility>
 #include <map>
+#include "server.h"
 
 #define PROMPT_SYMBOL "%" 
 #define PIPE_BUFFER_SIZE 15000
@@ -36,6 +37,6 @@ typedef struct {
     int out_target;
 } Pipe;
 
-int npshell(int id);
+int npshell(int id, User* user_table);
 
 #endif

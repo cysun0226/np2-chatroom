@@ -14,15 +14,20 @@
 #include <arpa/inet.h>
 #include <vector>
 #include <algorithm>
+#include <sys/shm.h>
+#include <sys/ipc.h>
 
 typedef struct {
     int id;
-    std::string name = "(no name)";
-    std::string ip;
-    std::string port;
+    char name[30];
+    char ip[NI_MAXHOST];
+    char port[NI_MAXSERV];
 } User;
 
 
-extern std::vector<User> user_table;
+// extern std::vector<User>* user_table;
+#define MAX_USER_NUM 30
+// extern User user_table[MAX_USER_NUM];
+
 
 #endif

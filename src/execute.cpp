@@ -367,16 +367,18 @@ void restore_src_table(){
   pipe_table.assign(pipe_table_bk.begin(), pipe_table_bk.end()); 
 }
 
-void who(int id){
+void who(int id, User* user_table){
   std::cout << "<ID>\t" << "<nickname>\t" << "<IP:port>\t" << "<indicate me>" << std::endl;
-  for (size_t i = 0; i < user_table.size(); i++){
-    std::cout << user_table[i].id << "\t" 
+  for (size_t i = 0; i < MAX_USER_NUM; i++){
+    if (user_table[i].id != -1){
+      std::cout << user_table[i].id << "\t" 
               << user_table[i].name << "\t"
               << user_table[i].ip << ":"
               << user_table[i].port;
-    if (user_table[i].id == id){
-      std::cout << "\t<-me";
+      if (user_table[i].id == id){
+        std::cout << "\t<-me";
+      }
+      std::cout << std::endl;
     }
-    std::cout << std::endl;
   }
 }

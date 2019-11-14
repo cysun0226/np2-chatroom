@@ -3,7 +3,8 @@
 
 
 // variables ---------------------------------------------------------------------
-std::vector<User> user_table;
+// std::vector<User> user_table;
+// std::vector<User>* user_table;
 
 // functions ---------------------------------------------------------------------
 
@@ -28,16 +29,24 @@ void *get_in_port(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_port);
 }
 
-int add_user(std::string ip, std::string port){
+void init_user_table(User* user_table){
+    for (size_t i = 0; i < MAX_USER_NUM; i++){
+        user_table[i].id = -1;
+    }
+}
+
+int add_user(User* user_table, char* ip, char* port){
     int new_user_id;
     
     // find the smallest unused id
     std::vector <int> used_id;
-    for (size_t i = 0; i < user_table.size(); i++){
-        used_id.push_back(user_table[i].id);
+    for (size_t i = 0; i < MAX_USER_NUM; i++){
+        if (user_table[i].id != -1){
+            used_id.push_back(user_table[i].id);
+        }
     }
     
-    for (size_t i = 1; i < 30; i++){
+    for (size_t i = 1; i < MAX_USER_NUM; i++){
         // if i not in used_id
         if (std::find(used_id.begin(), used_id.end(), i) == used_id.end()){
             new_user_id = i;
@@ -45,31 +54,51 @@ int add_user(std::string ip, std::string port){
         }
     }
 
-    User new_user;
-    new_user.id = new_user_id;
-    new_user.ip = ip;
-    new_user.port = port;
-    user_table.push_back(new_user);
+    // find an empty entry
+    for (size_t i = 0; i < MAX_USER_NUM; i++){
+        if (user_table[i].id == -1){
+            user_table[i].id = new_user_id;
+            strcpy(user_table[i].ip, ip);
+            strcpy(user_table[i].name, "(no name)");
+            strcpy(user_table[i].port, port);
+            break;
+        }
+    }
 
     return new_user_id;
 }
 
-void remove_user(int id){
+void remove_user(User* user_table, int id){
     // std::cout << "remove user " << id << std::endl;
-    for (size_t i = 0; i < user_table.size(); i++){
+    for (size_t i = 0; i < MAX_USER_NUM; i++){
+        // std::cout << "user[i].id = " << user_table[i].id << " id = " << id << std::endl;
         if (user_table[i].id == id){
-            std::cout << "remove user " << id << std::endl;
-            user_table.erase(user_table.begin() + i);
+            // std::cout << "remove user " << id << std::endl;
+            user_table[i].id = -1;
             break;
         }
     }
-    std::cout << "user_table.size() = " << user_table.size() << std::endl;
 }
 
 // main ---------------------------------------------------------------------
 
 int main()
 {
+    // locate the user_table share memory
+    int shm_id;
+    shm_id = shmget(IPC_PRIVATE, (MAX_USER_NUM+10) * sizeof(User), IPC_CREAT | 0600);
+    if (shm_id < 0){
+        printf("shmget error");
+        exit(-1);
+    }
+    // attach the shared memory
+    // user_table = (std::vector<User>*)shmat(shm_id, NULL, 0);
+    // User* shm = (std::vector<User>*)shmat(shm_id, NULL, 0);
+    
+    User* user_table = (User*)shmat(shm_id, NULL, 0);
+    std::cout << "init_user_table" << std::endl;
+    init_user_table(user_table);
+    
     int status;
 
     int sockfd, new_fd;
@@ -168,7 +197,7 @@ int main()
         }
 
         // add user to user_table
-        int user_id = add_user(std::string(ip_str), std::string(port_str));
+        int user_id = add_user(user_table, ip_str, port_str);
         
 
         // fork to handle connection
@@ -194,12 +223,15 @@ int main()
             // std::cin >> usr_input;
             // std::cout << "you type: " << usr_input << std::endl;
 
-            npshell(user_id);
+            // user_table = (std::vector<User>*)shmat(shm_id, NULL, 0);
+            user_table = (User*)shmat(shm_id, NULL, 0);
+            npshell(user_id, user_table);
 
             // execlp("bin/npshell", "bin/npshell", (char*) NULL);
 
             close(new_fd);
-            remove_user(user_id);
+            remove_user(user_table, user_id);
+            shmdt(user_table);
 
             exit(0);
         }
