@@ -402,6 +402,10 @@ void name(std::string usr_input, int id, User* user_table) {
   for (size_t i = 0; i < MAX_USER_NUM; i++){
     if (user_table[i].id == id){
       strcpy(user_table[i].name, name.c_str());
+      std::string name_msg = 
+      "*** User from " + std::string(user_table[i].ip) + ":" + \
+      std::string(user_table[i].port) + " is named '" + name + "'. ***\n";
+      broadcast(name_msg);
       break;
     }
   }

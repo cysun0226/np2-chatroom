@@ -38,7 +38,7 @@ void broadcast(std::string msg){
     // }
     for (size_t i = 0; i < MAX_USER_NUM; i++){
         if (user_table[i].id != -1){
-            // std::cout << "user_table[" << i << "].fd = " << user_table[i].fd << std::endl;
+            std::cout << "user_table[" << i << "].fd = " << user_table[i].fd << std::endl;
             send(user_table[i].fd, msg.c_str(), msg.size(), 0);
         }
     }
@@ -72,6 +72,14 @@ void init_user_table(User* user_table){
     for (size_t i = 0; i < MAX_USER_NUM; i++){
         user_table[i].id = -1;
         user_table[i].clear = true;
+    }
+}
+
+std::string get_user_name(int id, User* user_table){
+    for (size_t i = 0; i < MAX_USER_NUM; i++){
+        if (id == user_table[i].id){
+            return std::string(user_table[i].name);
+        }
     }
 }
 
@@ -294,7 +302,10 @@ int main()
             // signal(SIGUSR1, receive_broadcast);
 
             // broadcast login
-            broadcast("user login\n");
+            std::string login_msg;
+            login_msg = "*** User '(no name)' entered from " + std::string(ip_str) + \
+                        ":" + std::string(port_str) + ". ***\n";
+            broadcast(login_msg);
 
             // execute shell
             user_table = (User*)shmat(shm_id, NULL, 0);
@@ -307,7 +318,9 @@ int main()
             
             npshell(info);
 
-            broadcast("user exit\n");
+            std::string left_msg = \
+            "*** User '" + get_user_name(user_id, user_table) + "' left. ***\n";
+            broadcast(left_msg);
 
             // execlp("bin/npshell", "bin/npshell", (char*) NULL);
 
@@ -321,9 +334,6 @@ int main()
         }
 
         // close(new_fd);
-        
-
-
         
     }
 
