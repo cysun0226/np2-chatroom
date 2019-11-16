@@ -411,6 +411,13 @@ void name(std::string usr_input, int id, User* user_table) {
   }
 }
 
+void yell(std::string usr_input, int id, User* user_table) {
+  User user = get_user(id, user_table);
+  std::string yell_msg = 
+      "*** " + std::string(user.name) + " yelled ***: " + usr_input;
+  broadcast(yell_msg);
+}
+
 // build-in cmd ---------------------------------------------------------------------------------------
 
 int build_in_cmd(std::string usr_input, ConnectInfo info){ 
@@ -444,6 +451,12 @@ int build_in_cmd(std::string usr_input, ConnectInfo info){
   // name
   if (usr_input.substr(0, 4) == "name"){
     name(usr_input.substr(5), info.id, info.user_table);
+    return SUCCESS;
+  }
+
+  // yelled
+  if (usr_input.substr(0, 4) == "yell"){
+    yell(usr_input.substr(5), info.id, info.user_table);
     return SUCCESS;
   }
 

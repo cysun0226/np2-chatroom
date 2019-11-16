@@ -84,6 +84,14 @@ std::string get_user_name(int id, User* user_table){
     }
 }
 
+User get_user(int id, User* user_table){
+    for (size_t i = 0; i < MAX_USER_NUM; i++){
+        if (id == user_table[i].id){
+            return user_table[i];
+        }
+    }
+}
+
 int add_user(User* user_table, char* ip, char* port){
     int new_user_id;
     

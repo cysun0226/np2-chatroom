@@ -34,7 +34,7 @@ typedef struct {
 } ConnectInfo;
 
 void broadcast(std::string);
-
+User get_user(int id, User* user_table);
 // extern std::vector<User>* user_table;
 #define MAX_USER_NUM 30
 // extern User user_table[MAX_USER_NUM];
