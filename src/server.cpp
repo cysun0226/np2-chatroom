@@ -244,6 +244,25 @@ void remove_user(User* user_table, int id){
     }
 }
 
+void create_named_pipe(){
+    // FIFO file path 
+    std::string fifo_path = "./user_pipe"; 
+
+    // create named pipe
+    // named_pipe format: [from][to]
+    // e.g. ./user_pipe/0113
+    int digit = 2;
+
+    for (size_t f = 0; f <= MAX_USER_NUM; f++){ // from
+        for (size_t t = 0; t <= MAX_USER_NUM; t++){ // to
+            std::string f_str = std::string(digit - std::to_string(f).length(), '0') + std::to_string(f);
+            std::string t_str = std::string(digit - std::to_string(t).length(), '0') + std::to_string(t);
+            std::string fifo_name = fifo_path + f_str + t_str;
+            mkfifo(fifo_name.c_str(), 0666); 
+        }
+    }
+}
+
 // main ---------------------------------------------------------------------
 
 int main()
@@ -259,6 +278,9 @@ int main()
     action.sa_flags = SA_SIGINFO;
     action.sa_sigaction = &receive_msg;
     sigaction(SIGUSR2, &action, NULL);
+
+    
+
 
     // locate the share memory
     shm_id = shmget(IPC_PRIVATE, (MAX_USER_NUM+10) * sizeof(User), IPC_CREAT | 0600);
@@ -284,6 +306,8 @@ int main()
     init_user_table(user_table);
     memset(broadcast_buf, 0, 200);
     memset(tell_buf, 0, (MAX_USER_NUM+1)*MAX_TELL_LENGTH);
+
+    create_named_pipe();
     
     int status;
 

@@ -16,6 +16,10 @@
 #include <algorithm>
 #include <sys/shm.h>
 #include <sys/ipc.h>
+#include <fcntl.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 
 #define BROADCAST_SIG -1
 
