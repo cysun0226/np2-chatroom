@@ -12,6 +12,10 @@ int broadcast_shm_id;
 bool broadcast_flag;
 pid_t main_pid;
 int current_login;
+int tell_shm_id;
+char* tell_buf;
+bool tell_table[MAX_USER_NUM+1][MAX_USER_NUM+1];
+// char tell_msg_buf[MAX_USER_NUM+1][MAX_TELL_LENGTH];
 
 // functions ---------------------------------------------------------------------
 void close_handler(int s) {
@@ -37,7 +41,7 @@ void broadcast(std::string msg){
     strcpy(broadcast_buf, msg.c_str());
     
     union sigval value;
-    value.sival_int = BORADCAST_SIG;
+    value.sival_int = BROADCAST_SIG;
     sigqueue(main_pid, SIGUSR2, value);
 
     // for (size_t i = 0; i < MAX_USER_NUM; i++){
@@ -106,10 +110,23 @@ void receive_broadcast(int signum) {
 
 void receive_msg(int sig, siginfo_t *info, void *extra) {
    int act = info->si_value.sival_int;
-
-   if (act == BORADCAST_SIG){
-       broadcast_flag = true;
+   
+   // broadcast
+   if (act == BROADCAST_SIG){
+       send_broadcast();
+       return;
    }
+
+   // tell
+   if (act >= 10000){
+       int to = act % 100;
+       int from = ((act - to) / 100) % 100;
+       User u = get_user(to, user_table);
+       std::cout << "from " << from << "to " << to << std::endl;
+       send(u.fd, tell_buf, std::string(tell_buf).size(), 0);
+       return;
+   }
+
 
    // yell from user
     //    else {
@@ -254,12 +271,19 @@ int main()
         printf("broadcast shmget error");
         exit(-1);
     }
+    tell_shm_id = shmget(IPC_PRIVATE, ((MAX_USER_NUM+1)*MAX_TELL_LENGTH) * sizeof(char), IPC_CREAT | 0600);
+    if (tell_shm_id < 0){
+        printf("tell shmget error");
+        exit(-1);
+    }
 
     // attach the shared memory
     user_table = (User*)shmat(shm_id, NULL, 0);
     broadcast_buf = (char*)shmat(broadcast_shm_id, NULL, 0);
+    tell_buf = (char*)shmat(tell_shm_id, NULL, 0);
     init_user_table(user_table);
     memset(broadcast_buf, 0, 200);
+    memset(tell_buf, 0, (MAX_USER_NUM+1)*MAX_TELL_LENGTH);
     
     int status;
 
@@ -349,9 +373,9 @@ int main()
             perror("server: open accept fd failed");
         }
 
-        if (broadcast_flag == true){
-            send_broadcast();
-        }
+        // if (broadcast_flag == true){
+        //     send_broadcast();
+        // }
 
         if (new_fd < 0) {
             continue;
@@ -420,10 +444,12 @@ int main()
             // execute shell
             user_table = (User*)shmat(shm_id, NULL, 0);
             broadcast_buf = (char*)shmat(broadcast_shm_id, NULL, 0);
+            tell_buf = (char*)shmat(tell_shm_id, NULL, 0);
             ConnectInfo info = {
                 .id = user_id,
                 .user_table = user_table,
-                .broadcast_buf = broadcast_buf
+                .broadcast_buf = broadcast_buf,
+                .tell_buf = tell_buf
             };
             
             npshell(info);
@@ -439,6 +465,7 @@ int main()
             kill(getppid(), SIGUSR1);
             shmdt(user_table);
             shmdt(broadcast_buf);
+            shmdt(tell_buf);
 
             exit(0);
         }        

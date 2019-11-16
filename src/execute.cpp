@@ -418,6 +418,31 @@ void yell(std::string usr_input, int id, User* user_table) {
   broadcast(yell_msg);
 }
 
+void tell(std::string usr_input, int id, User* user_table, char* tell_buf) {
+  std::stringstream ss;
+  ss.str(usr_input);
+  int to_id;
+  std::string first_word;
+  ss >> to_id >> first_word;
+  size_t msg_start = usr_input.find(first_word);
+  std::string msg = usr_input.substr(msg_start);
+  
+  User u = get_user(id, user_table);
+  std::string tell_msg = 
+    "*** " + std::string(u.name) + " told you ***: " + msg + "\n";
+
+  strcpy(tell_buf, tell_msg.c_str());
+
+  union sigval value;
+  value.sival_int = 10000 + id*100 + to_id;
+  sigqueue(getppid(), SIGUSR2, value);
+
+  // User user = get_user(id, user_table);
+  // std::string yell_msg = 
+  //     "*** " + std::string(user.name) + " yelled ***: " + usr_input + "\n";
+  // broadcast(yell_msg);
+}
+
 
 
 // build-in cmd ---------------------------------------------------------------------------------------
@@ -456,9 +481,15 @@ int build_in_cmd(std::string usr_input, ConnectInfo info){
     return SUCCESS;
   }
 
-  // yelled
+  // yell
   if (usr_input.substr(0, 4) == "yell"){
     yell(usr_input.substr(5), info.id, info.user_table);
+    return SUCCESS;
+  }
+
+  // tell
+  if (usr_input.substr(0, 4) == "tell"){
+    tell(usr_input.substr(5), info.id, info.user_table, info.tell_buf);
     return SUCCESS;
   }
 

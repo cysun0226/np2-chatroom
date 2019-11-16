@@ -17,7 +17,7 @@
 #include <sys/shm.h>
 #include <sys/ipc.h>
 
-#define BORADCAST_SIG -1
+#define BROADCAST_SIG -1
 
 typedef struct {
     int id;
@@ -33,12 +33,14 @@ typedef struct {
     int id;
     User* user_table;
     char* broadcast_buf;
+    char* tell_buf;
 } ConnectInfo;
 
 void broadcast(std::string);
 User get_user(int id, User* user_table);
 // extern std::vector<User>* user_table;
 #define MAX_USER_NUM 30
+#define MAX_TELL_LENGTH 1024
 // extern User user_table[MAX_USER_NUM];
 
 
