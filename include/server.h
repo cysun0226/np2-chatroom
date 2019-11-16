@@ -17,6 +17,8 @@
 #include <sys/shm.h>
 #include <sys/ipc.h>
 
+#define BORADCAST_SIG -1
+
 typedef struct {
     int id;
     char name[30];

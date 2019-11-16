@@ -404,7 +404,7 @@ void name(std::string usr_input, int id, User* user_table) {
       strcpy(user_table[i].name, name.c_str());
       std::string name_msg = 
       "*** User from " + std::string(user_table[i].ip) + ":" + \
-      std::string(user_table[i].port) + " is named '" + name + "'. ***";
+      std::string(user_table[i].port) + " is named '" + name + "'. ***\n";
       broadcast(name_msg);
       break;
     }
@@ -414,7 +414,7 @@ void name(std::string usr_input, int id, User* user_table) {
 void yell(std::string usr_input, int id, User* user_table) {
   User user = get_user(id, user_table);
   std::string yell_msg = 
-      "*** " + std::string(user.name) + " yelled ***: " + usr_input;
+      "*** " + std::string(user.name) + " yelled ***: " + usr_input + "\n";
   broadcast(yell_msg);
 }
 

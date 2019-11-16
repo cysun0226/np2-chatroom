@@ -9,6 +9,9 @@ User* user_table;
 int shm_id;
 char* broadcast_buf;
 int broadcast_shm_id;
+bool broadcast_flag;
+pid_t main_pid;
+int current_login;
 
 // functions ---------------------------------------------------------------------
 void close_handler(int s) {
@@ -32,17 +35,43 @@ void broadcast(std::string msg){
     // std::cout << msg << std::endl;
     // raise(SIGUSR1);
     strcpy(broadcast_buf, msg.c_str());
-    for (size_t i = 0; i < MAX_USER_NUM; i++){
-        if (user_table[i].id != -1){
-            kill(user_table[i].pid, SIGUSR1);
-        }
-    }
+    
+    union sigval value;
+    value.sival_int = BORADCAST_SIG;
+    sigqueue(main_pid, SIGUSR2, value);
+
+    // for (size_t i = 0; i < MAX_USER_NUM; i++){
+    //     if (user_table[i].id != -1){
+    //         // kill(user_table[i].pid, SIGUSR1);
+    //         union sigval value;
+    //         value.sival_int = BORADCAST_SIG;
+    //         std::cout << "user_table[" << i << "].pid = " << user_table[i].pid << std::endl;
+    //         sigqueue(user_table[i].pid, SIGUSR1, value);
+    //     }
+    // }
+
     // for (size_t i = 0; i < MAX_USER_NUM; i++){
     //     if (user_table[i].id != -1){
     //         std::cout << "user_table[" << i << "].fd = " << user_table[i].fd << std::endl;
     //         send(user_table[i].fd, msg.c_str(), msg.size(), 0);
     //     }
     // }
+}
+
+
+
+void send_broadcast(){
+    std::string msg(broadcast_buf);
+    for (size_t i = 0; i < MAX_USER_NUM; i++){
+        if (user_table[i].id != -1 && user_table[i].id != current_login){
+            send(user_table[i].fd, msg.c_str(), msg.size(), 0);
+        }
+    }
+    broadcast_flag = false;
+    if (current_login != -1){
+        current_login = -1;
+    }
+    
 }
 
 void sig_handler(int s){
@@ -77,6 +106,22 @@ void receive_broadcast(int signum) {
 //             }
 //        }
 //    }
+}
+
+void receive_msg(int sig, siginfo_t *info, void *extra) {
+   int act = info->si_value.sival_int;
+
+   if (act == BORADCAST_SIG){
+       broadcast_flag = true;
+   }
+
+   // yell from user
+    //    else {
+    //        /* code */
+    //    }
+   
+//    printf("Signal: %d, value: [%d]\n", sig, act);
+    return;
 }
 
 void close_other_pipe(int id, User* user_table){
@@ -192,7 +237,15 @@ int main()
     // regist the ctrl-c exit
     signal(SIGINT, close_handler);
     signal(SIGUSR1, remove_user_handler);
-    
+    broadcast_flag = false;
+    main_pid = getpid();
+
+    // regist broadcast/tell handler
+    struct sigaction action;
+    action.sa_flags = SA_SIGINFO;
+    action.sa_sigaction = &receive_msg;
+    sigaction(SIGUSR2, &action, NULL);
+
     // locate the share memory
     shm_id = shmget(IPC_PRIVATE, (MAX_USER_NUM+10) * sizeof(User), IPC_CREAT | 0600);
     if (shm_id < 0){
@@ -290,6 +343,7 @@ int main()
     struct sockaddr_storage client_addr;
     char ip_str[NI_MAXHOST];
     char port_str[NI_MAXSERV];
+    current_login = -1;
 
     while (1){
         addr_size = sizeof client_addr;
@@ -297,6 +351,15 @@ int main()
         if (new_fd < 0){
             perror("server: open accept fd failed");
         }
+
+        if (broadcast_flag == true){
+            send_broadcast();
+        }
+
+        if (new_fd < 0) {
+            continue;
+        }
+        
         
         // get client ip and port
         if (getnameinfo((struct sockaddr *)&client_addr, 
@@ -310,10 +373,12 @@ int main()
 
         // add user to user_table
         int user_id = add_user(user_table, ip_str, port_str);
+        current_login = user_id;
 
         // fork to handle connection
         std::cout << "new_fd = " << new_fd << std::endl;
-        pid_t ppid = getpid();
+        // pid_t ppid = getpid();
+        // std::cout << "parent_pid = " << ppid << std::endl;
         pid_t pid = fork();
         update_user_table(user_id, pid, new_fd, user_table);
 
@@ -321,8 +386,15 @@ int main()
         {
             close(sockfd); // child does not need listener
             close_other_pipe(user_id, user_table);
+
             // signal(SIGUSR1, SIG_IGN);
-            signal(SIGUSR1, receive_broadcast);
+            // signal(SIGUSR1, receive_broadcast);
+
+            // regist broadcast/tell handler
+            // struct sigaction action;
+            // action.sa_flags = SA_SIGINFO;
+            // action.sa_sigaction = &receive_msg;
+            // sigaction(SIGUSR1, &action, NULL);
             
             close(STDOUT_FILENO);
             close(STDIN_FILENO);
@@ -350,7 +422,8 @@ int main()
             std::string login_msg;
             login_msg = "*** User '(no name)' entered from " + std::string(ip_str) + \
                         ":" + std::string(port_str) + ". ***";
-            broadcast(login_msg);
+            std::cout << login_msg << std::endl;
+            broadcast(login_msg + "\n");
 
             // execute shell
             user_table = (User*)shmat(shm_id, NULL, 0);
@@ -364,19 +437,19 @@ int main()
             npshell(info);
 
             std::string left_msg = \
-            "*** User '" + std::string(get_user(user_id, user_table).name) + "' left. ***";
+            "*** User '" + std::string(get_user(user_id, user_table).name) + "' left. ***\n";
 
             // execlp("bin/npshell", "bin/npshell", (char*) NULL);
 
             close(new_fd);
             remove_user(user_table, user_id);
             broadcast(left_msg);
-            kill(ppid, SIGUSR1);
+            kill(getppid(), SIGUSR1);
             shmdt(user_table);
             shmdt(broadcast_buf);
 
             exit(0);
-        }
+        }        
 
         // close(new_fd);
         
