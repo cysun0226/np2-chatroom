@@ -63,15 +63,11 @@ void broadcast(std::string msg){
 void send_broadcast(){
     std::string msg(broadcast_buf);
     for (size_t i = 0; i < MAX_USER_NUM; i++){
-        if (user_table[i].id != -1 && user_table[i].id != current_login){
+        if (user_table[i].id != -1){
             send(user_table[i].fd, msg.c_str(), msg.size(), 0);
         }
     }
     broadcast_flag = false;
-    if (current_login != -1){
-        current_login = -1;
-    }
-    
 }
 
 void sig_handler(int s){
@@ -171,7 +167,7 @@ User get_user(int id, User* user_table){
     }
 }
 
-int add_user(User* user_table, char* ip, char* port){
+int add_user(User* user_table, char* ip, char* port, int new_fd){
     int new_user_id;
     
     // find the smallest unused id
@@ -197,6 +193,7 @@ int add_user(User* user_table, char* ip, char* port){
             strcpy(user_table[i].ip, ip);
             strcpy(user_table[i].name, "(no name)");
             strcpy(user_table[i].port, port);
+            user_table[i].fd = new_fd;
             break;
         }
     }
@@ -372,8 +369,21 @@ int main()
         }
 
         // add user to user_table
-        int user_id = add_user(user_table, ip_str, port_str);
+        int user_id = add_user(user_table, ip_str, port_str, new_fd);
         current_login = user_id;
+
+        // show welcome message
+        std::string welcome_msg = 
+        "****************************************\n"
+        "** Welcome to the information server. **\n"
+        "****************************************\n";
+        send(new_fd, welcome_msg.c_str(), welcome_msg.size(), 0);
+        // broadcast login
+        std::string login_msg;
+        login_msg = "*** User '(no name)' entered from " + std::string(ip_str) + \
+                        ":" + std::string(port_str) + ". ***\n";
+        strcpy(broadcast_buf, login_msg.c_str());
+        send_broadcast();
 
         // fork to handle connection
         std::cout << "new_fd = " << new_fd << std::endl;
@@ -406,24 +416,6 @@ int main()
             }
 
             // dup2(new_fd, STDOUT_FILENO);  // redirect stdout to new_fd
-
-            // show welcome message
-            std::string welcome_msg = 
-            "****************************************\n"
-            "** Welcome to the information server. **\n"
-            "****************************************";
-            
-            std::cout << welcome_msg << std::endl;
-
-            // broadcast receiver
-            // signal(SIGUSR1, receive_broadcast);
-
-            // broadcast login
-            std::string login_msg;
-            login_msg = "*** User '(no name)' entered from " + std::string(ip_str) + \
-                        ":" + std::string(port_str) + ". ***";
-            std::cout << login_msg << std::endl;
-            broadcast(login_msg + "\n");
 
             // execute shell
             user_table = (User*)shmat(shm_id, NULL, 0);
