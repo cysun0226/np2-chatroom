@@ -49,8 +49,42 @@ void sig_handler(int s){
     while(waitpid(-1, NULL, WNOHANG) > 0);
 }
 
+User get_user_by_name(std::string name){
+    for (size_t i = 0; i < MAX_USER_NUM; i++){
+        if (std::string(user_table[i].name) == name){
+            return user_table[i];
+        }
+    }
+    User err;
+    return err;
+}
+
 void receive_broadcast(int signum) {
    std::cout << broadcast_buf << std::endl;
+   std::string msg(broadcast_buf);
+   
+   // if user exit
+//    if (msg.find("left") != std::string::npos) {
+//        size_t quot_1 = msg.find("'");
+//        size_t quot_2 = msg.find("'", quot_1);
+//        std::string name = msg.substr(quot_1+1, quot_2);
+//        std::cout << name << std::endl;
+//        for (size_t i = 0; i < MAX_USER_NUM; i++){
+//             if (user_table[i].id == -1 && std::string(user_table[i].name) == name){
+//                 std::cout << "remove user " << i << std::endl;
+//                 close(user_table[i].fd);
+//                 // user_table[i].clear = true;
+//             }
+//        }
+//    }
+}
+
+void close_other_pipe(int id, User* user_table){
+    for (size_t i = 0; i < MAX_USER_NUM; i++){
+        if (user_table[i].id != id){
+            close(user_table[i].fd);
+        }
+    }
 }
 
 void *get_in_addr(struct sockaddr *sa)
@@ -286,6 +320,7 @@ int main()
         if (pid == 0) // child process
         {
             close(sockfd); // child does not need listener
+            close_other_pipe(user_id, user_table);
             // signal(SIGUSR1, SIG_IGN);
             signal(SIGUSR1, receive_broadcast);
             
@@ -329,13 +364,13 @@ int main()
             npshell(info);
 
             std::string left_msg = \
-            "*** User '" + get_user_name(user_id, user_table) + "' left. ***";
-            broadcast(left_msg);
+            "*** User '" + std::string(get_user(user_id, user_table).name) + "' left. ***";
 
             // execlp("bin/npshell", "bin/npshell", (char*) NULL);
 
             close(new_fd);
             remove_user(user_table, user_id);
+            broadcast(left_msg);
             kill(ppid, SIGUSR1);
             shmdt(user_table);
             shmdt(broadcast_buf);
