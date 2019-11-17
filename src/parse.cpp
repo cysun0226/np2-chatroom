@@ -10,7 +10,7 @@ std::pair <std::vector<Command>, std::string> parse_cmd(std::string usr_input) {
     std::string str;
     int idx = 0;
     while(ss >> str){
-        if (str[0] == '|' || str[0] == '!' || str[0] == '>'){
+        if (str[0] == '|' || str[0] == '!' || str[0] == '>' || str[0] == '<'){
             Command cmd;
             cmd.idx = idx; idx++;
             cmd.fd_type = str[0];
@@ -22,8 +22,18 @@ std::pair <std::vector<Command>, std::string> parse_cmd(std::string usr_input) {
             for (size_t i = 0; i < buf.size(); i++){
                 cmd.args.push_back(buf[i]);
             }
-            if (str[0] == '>'){
+            // output to file
+            if (str[0] == '>' && str.size()==1){
                 ss >> out_file;
+            }   
+            // output to user pipe
+            if (str[0] == '>' && str.size()>1){
+                out_file = str.substr(1);
+                cmd.fd_type = '}';
+            }
+            // receive from user pipe
+            if (str[0] == '<'){
+                out_file = str.substr(1);
             }   
             cmds.push_back(cmd);
             buf.clear();

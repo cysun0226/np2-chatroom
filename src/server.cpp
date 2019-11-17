@@ -246,7 +246,7 @@ void remove_user(User* user_table, int id){
 
 void create_named_pipe(){
     // FIFO file path 
-    std::string fifo_path = "./user_pipe"; 
+    std::string fifo_path = "./user_pipe/"; 
 
     // create named pipe
     // named_pipe format: [from][to]
