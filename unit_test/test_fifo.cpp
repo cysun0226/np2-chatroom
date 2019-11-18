@@ -98,7 +98,7 @@ int main()
     }
 
     // write content into the named_pipe
-    create_named_pipe();
+    create_named_pipe();        
     std::cout << "wait for connection..." << std::endl;
 
 
@@ -157,12 +157,33 @@ int main()
 
         close(new_fd);
 
-        // parent
-        std::cout << "create_named_pipe" << std::endl;
+        // fork a process to execute bin to write to user pipe
+        pid_t pid_write = fork();
         int named_fd = open("./user_pipe/named_pipe", O_WRONLY);
-        std::cout << "named_fd" << std::endl;
-        write(named_fd, "XDDDDD\n", 8); 
+        if (pid_write == 0)
+        {
+            // close(STDOUT_FILENO);
+            // close(STDIN_FILENO);
+            // close(STDERR_FILENO);
+            dup2(named_fd, STDOUT_FILENO);
+            close(named_fd);
+
+            execlp("bin/cat", "bin/cat", "test.html", (char*) NULL);
+            exit(1);
+            // std::cout << "hiiiii" << std::endl;    
+        }
+
+        int status;
+        waitpid(pid_write, &status, WNOHANG);
         close(named_fd);
+
+        
+        
+        // std::cout << "create_named_pipe" << std::endl;
+        // int named_fd = open("./user_pipe/named_pipe", O_WRONLY);
+        // std::cout << "named_fd" << std::endl;
+        // write(named_fd, "XDDDDD\n", 8); 
+        // close(named_fd);
 
 
         
