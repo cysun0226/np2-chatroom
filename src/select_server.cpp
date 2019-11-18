@@ -126,6 +126,16 @@ void name(int id, std::string user_name){
   }
 }
 
+void yell(int id, std::string msg){
+  std::string yell_msg = 
+      "*** " + std::string(get_user_by_id(id).name) + " yelled ***: " + msg + "\n";
+  broadcast(yell_msg);
+}
+
+void tell(int from, int to, std::string msg){
+  send(get_user_by_id(to).fd, msg.c_str(), msg.length(), 0);
+}
+
 
 // connect
 
