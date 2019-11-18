@@ -10,7 +10,7 @@ std::pair <std::vector<Command>, std::string> parse_cmd(std::string usr_input, C
     std::string str;
     int idx = 0;
     while(ss >> str){
-        if (str[0] == '|' || str[0] == '!' || str[0] == '>' || str[0] == '<'){
+        if (str[0] == '|' || str[0] == '!' || str[0] == '>'){
             Command cmd;
             cmd.idx = idx; idx++;
             cmd.fd_type = str[0];
@@ -20,7 +20,17 @@ std::pair <std::vector<Command>, std::string> parse_cmd(std::string usr_input, C
             }
             cmd.cmd = buf[0];
             for (size_t i = 0; i < buf.size(); i++){
-                cmd.args.push_back(buf[i]);
+                // receive from user pipe
+                if (buf[i][0] == '<'){
+                    int digit = 2;
+                    std::string t_str = std::string(digit - std::to_string(info.id).length(), '0') + std::to_string(info.id);
+                    std::string f_str = std::string(digit - str.substr(1).length(), '0') + str.substr(1);
+                    cmd.in_file = "./user_pipe/" + f_str + t_str;
+                }
+                
+                else{
+                    cmd.args.push_back(buf[i]);
+                }
             }
             // output to file
             if (str[0] == '>' && str.size()==1){
@@ -34,13 +44,7 @@ std::pair <std::vector<Command>, std::string> parse_cmd(std::string usr_input, C
                 out_file = "./user_pipe/" + f_str + t_str;
                 cmd.fd_type = '}';
             }
-            // receive from user pipe
-            if (str[0] == '<'){
-                int digit = 2;
-                std::string t_str = std::string(digit - std::to_string(info.id).length(), '0') + std::to_string(info.id);
-                std::string f_str = std::string(digit - str.substr(1).length(), '0') + str.substr(1);
-                out_file = "./user_pipe/" + f_str + t_str;
-            }   
+            
             cmds.push_back(cmd);
             buf.clear();
         }
@@ -56,7 +60,15 @@ std::pair <std::vector<Command>, std::string> parse_cmd(std::string usr_input, C
         cmd.fd_type = '-';
         cmd.cmd = buf[0];
         for (size_t i = 0; i < buf.size(); i++){
-            cmd.args.push_back(buf[i]);
+            if (buf[i][0] == '<'){
+                    int digit = 2;
+                    std::string t_str = std::string(digit - std::to_string(info.id).length(), '0') + std::to_string(info.id);
+                    std::string f_str = std::string(digit - str.substr(1).length(), '0') + str.substr(1);
+                    cmd.in_file = "./user_pipe/" + f_str + t_str;
+                }
+                else{
+                    cmd.args.push_back(buf[i]);
+                }
         }
         cmds.push_back(cmd);
     }

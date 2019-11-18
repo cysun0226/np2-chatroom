@@ -22,7 +22,7 @@ enum {PIPE_STDOUT=-1};
 
 typedef struct {
     std::string cmd;
-    std::string out_file = "";
+    std::string in_file = "";
     int pipe_in = -1;
     int pipe_out = PIPE_STDOUT;
     int in_fd = STDIN_FILENO;

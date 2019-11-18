@@ -24,7 +24,7 @@ int get_cmd(ConnectInfo info){
 
   // parse
   std::pair<std::vector<Command>, std::string> parsed_cmd\
-  = parse_cmd(usr_input);
+  = parse_cmd(usr_input, info);
 
   // if no input
   if (parsed_cmd.first.size() < 1){

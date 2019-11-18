@@ -50,6 +50,15 @@ pid_t exec_cmd(Command cmd, bool last){
       dup2(cmd.out_fd, STDERR_FILENO);
     }
 
+    // if receive from user pipe
+    if (cmd.in_file != ""){
+      close(cmd.in_fd);
+    }
+    if (cmd.fd_type == '}'){
+      close(cmd.out_fd);
+    }
+    
+
     // close unuse pipes
     for (size_t i = 0; i < tmp_delete.size(); i++){
       close(tmp_delete[i].first[READ]);
@@ -108,6 +117,9 @@ pid_t exec_cmd(Command cmd, bool last){
         waitpid(pid, &status, 0);
       }
       else{
+        if (last && cmd.fd_type=='}') {
+          close(cmd.out_fd);
+        }
         signal(SIGCHLD, child_handler);
       }
     }
@@ -149,6 +161,15 @@ int build_pipe(std::vector<Command> &cmds, std::string filename){
     }
   }
 
+  /* if receive input from user pipe */
+  for (size_t i = 0; i < cmds.size(); i++){
+    if (cmds[i].in_file != ""){
+      int receive_pipe_fd = open(cmds[i].in_file.c_str(), O_RDONLY);
+      cmds[i].in_fd = receive_pipe_fd;
+    }
+  }
+  
+
   /* if output to file */
   int outfile_fd;
   if (cmds.back().fd_type == '>'){
@@ -158,6 +179,19 @@ int build_pipe(std::vector<Command> &cmds, std::string filename){
 
     cmds.back().out_fd = outfile_fd;
   }
+
+  /* if write to user pipe */
+  if (cmds.back().fd_type == '}'){
+    int user_pipe_fd;
+    user_pipe_fd = open(filename.c_str(), O_WRONLY);
+    cmds.back().out_fd = user_pipe_fd;
+    // send signal to the receiver
+    int digit = 2;
+    int from = std::stoi(filename.substr(12, 14));
+    int to = std::stoi(filename.substr(14, 16));
+    // std::string out_file = "./user_pipe/" + f_str + t_str;
+  }
+
 
   /* Create required new pipes */
   for (size_t i = 0; i < cmds.size(); i++){

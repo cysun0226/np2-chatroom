@@ -137,6 +137,22 @@ void receive_msg(int sig, siginfo_t *info, void *extra) {
     return;
 }
 
+void receive_user_pipe_handler(int sig, siginfo_t *info, void *extra) {
+   int act = info->si_value.sival_int;
+
+   // tell
+   if (act >= 20000){
+       int to = act % 100;
+       int from = ((act - to) / 100) % 100;
+       
+    //    std::cout << "open named piped" <<  << std::endl;
+       
+       return;
+   }
+    return;
+}
+
+
 void close_other_pipe(int id, User* user_table){
     for (size_t i = 0; i < MAX_USER_NUM; i++){
         if (user_table[i].id != id){
