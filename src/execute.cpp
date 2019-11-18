@@ -498,6 +498,7 @@ void tell(std::string usr_input, int id, User* user_table, char* tell_buf) {
   User to_user = get_user(to_id, user_table);
   if (to_user.id == -1){
     std::cout << "*** Error: user " << to_id << " does not exist yet. ***" << std::endl;
+    return;
   }
 
   size_t msg_start = usr_input.find(first_word);
