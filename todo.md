@@ -1,5 +1,7 @@
 # who
-- modify user_table to share memory
+- broadcast message of user pipe in server 3
+- server 2 user pipe
+- server 2 env var
 
   
 * np_multi_proc 與 np_single_proc 的差異在於:

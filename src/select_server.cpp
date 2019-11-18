@@ -1,4 +1,7 @@
 #include "../include/select_server.h"
+#include "../include/npshell_select.h"
+#include "../include/execute_select.h"
+
 
 User user_table[30];
 
@@ -80,6 +83,15 @@ User get_user_by_fd(int fd){
     return u;
 }
 
+// build-in commands
+void broadcast(std::string msg){
+  for (size_t i = 0; i < MAX_USER_NUM; i++){
+    if (user_table[i].id != -1){
+      send(user_table[i].fd, msg.c_str(), msg.length(), 0);
+    }
+  }
+}
+
 void who(int id, int client_fd){
   std::string header = "<ID>\t<nickname>\t<IP:port>\t<indicate me>\n";
   send(client_fd, header.c_str(), header.length(), 0);
@@ -119,7 +131,7 @@ void name(int id, std::string user_name){
       strcpy(user_table[i].name, user_name.c_str());
       std::string name_msg = 
       "*** User from " + std::string(user_table[i].ip) + ":" + \
-      std::string(user_table[i].port) + " is named '" + name + "'. ***\n";
+      std::string(user_table[i].port) + " is named '" + user_name + "'. ***\n";
       broadcast(name_msg);
       break;
     }
@@ -133,7 +145,8 @@ void yell(int id, std::string msg){
 }
 
 void tell(int from, int to, std::string msg){
-  send(get_user_by_id(to).fd, msg.c_str(), msg.length(), 0);
+  std::string tell_msg = msg + "\n";
+  send(get_user_by_id(to).fd, tell_msg.c_str(), tell_msg.length(), 0);
 }
 
 
@@ -148,16 +161,12 @@ void *get_in_addr(struct sockaddr *sa)
   return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-void broadcast(std::string msg){
-  for (size_t i = 0; i < MAX_USER_NUM; i++){
-    if (user_table[i].id != -1){
-      send(user_table[i].fd, msg.c_str(), msg.length(), 0);
-    }
-  }
-}
-
 int main(int argc, char* argv[])
 {
+  // set PATH
+  char default_path[] = "PATH=bin:.";
+  putenv(default_path);
+  
   // server
   fd_set server_fd;
   // fd of select
@@ -240,6 +249,7 @@ int main(int argc, char* argv[])
     client_fds = server_fd;
 
     if (select(fdmax+1, &client_fds, NULL, NULL, NULL) == -1) {
+      continue;
       perror("select");
       exit(4);
     }
@@ -289,6 +299,7 @@ int main(int argc, char* argv[])
             login_msg = "*** User '(no name)' entered from " + std::string(ip_str) + \
                         ":" + std::string(port_str) + ". ***\n";
             broadcast(login_msg);
+            
             // first prompt
             send(new_fd, "% ", 3, 0);
           }
@@ -315,19 +326,37 @@ int main(int argc, char* argv[])
           }
           // get input from user
           else{
-            User u = get_user_by_fd(i);
-            who(u.id, u.fd);
-            // pid_t pid = fork();
-            // if (pid == 0){
-            //     dup2(i, STDOUT_FILENO);
-            //     close(i);
-            //     User u = get_user_by_fd(i);
-                
-            //     // execlp("bin/ls", "bin/ls", (char*) NULL);
+            std::string usr_input(client_input);
+            memset(client_input, '\0', sizeof(client_input));
+            // pop the last char
+            usr_input.pop_back();
+            /* Save current stdout */
+            int save_stdout = dup(STDOUT_FILENO);
+            dup2(i, STDOUT_FILENO);
 
-            //     // dup back to stdout
-            //     dup2(STDOUT_FILENO, i);
-            // }
+            // execute user
+            ConnectInfo info = {
+                .id = get_user_by_fd(i).id ,
+                .user_table = user_table
+            };
+            int status = run_cmd(usr_input, info);
+
+            // prompt
+            if (status == SUCCESS){
+              send(i, "% ", 3, 0);
+            }
+            else{ // close pipe
+              close(i);
+              FD_CLR(i, &server_fd);
+              remove_user(get_user_by_fd(i).id);
+              std::string left_msg = \
+                "*** User '" + std::string(get_user_by_fd(i).name) + "' left. ***\n";
+              broadcast(left_msg);
+            }
+            
+            
+            /* Restore stdout */
+            dup2(save_stdout, 1);
           }
 
             
