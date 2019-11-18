@@ -26,6 +26,11 @@ int get_cmd(ConnectInfo info){
   std::pair<std::vector<Command>, std::string> parsed_cmd\
   = parse_cmd(usr_input, info);
 
+  // check if user exist
+  if (cmd_user_exist(parsed_cmd.first, parsed_cmd.second, info) == false){
+    return SUCCESS;
+  }
+
   // if no input
   if (parsed_cmd.first.size() < 1){
     return SUCCESS;

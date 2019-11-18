@@ -19,6 +19,7 @@
 #include <fcntl.h> 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <dirent.h>
 
 
 #define BROADCAST_SIG -1
@@ -42,6 +43,7 @@ typedef struct {
 
 void broadcast(std::string);
 User get_user(int id, User* user_table);
+int create_named_pipe(int from, int to);
 // extern std::vector<User>* user_table;
 #define MAX_USER_NUM 30
 #define MAX_TELL_LENGTH 1024

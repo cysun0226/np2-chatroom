@@ -182,13 +182,16 @@ int build_pipe(std::vector<Command> &cmds, std::string filename){
 
   /* if write to user pipe */
   if (cmds.back().fd_type == '}'){
+    int from = std::stoi(filename.substr(12, 2));
+    int to = std::stoi(filename.substr(14, 2));
+    
+    // open a fifo
+    create_named_pipe(from, to);
     int user_pipe_fd;
     user_pipe_fd = open(filename.c_str(), O_WRONLY);
     cmds.back().out_fd = user_pipe_fd;
     // send signal to the receiver
     int digit = 2;
-    int from = std::stoi(filename.substr(12, 14));
-    int to = std::stoi(filename.substr(14, 16));
     // std::string out_file = "./user_pipe/" + f_str + t_str;
   }
 
@@ -288,6 +291,14 @@ int exec_cmds(std::pair<std::vector<Command>, std::string> parsed_cmd){
 
     // build pipes
     int outfile_fd = build_pipe(cmds, parsed_cmd.second);
+
+    // remove named pipes
+    for (size_t i = 0; i < cmds.size(); i++){
+      if (cmds[i].in_file != ""){
+        remove(cmds[i].in_file.c_str());
+      }
+    }
+    
 
     // execute commands
     // for (size_t i = 0; i < cmds.size(); i++){
@@ -458,9 +469,15 @@ void tell(std::string usr_input, int id, User* user_table, char* tell_buf) {
   int to_id;
   std::string first_word;
   ss >> to_id >> first_word;
+
+  // check if exist
+  User to_user = get_user(to_id, user_table);
+  if (to_user.id == -1){
+    std::cout << "*** Error: user " << to_id << " does not exist yet. ***" << std::endl;
+  }
+
   size_t msg_start = usr_input.find(first_word);
   std::string msg = usr_input.substr(msg_start);
-  
   User u = get_user(id, user_table);
   std::string tell_msg = 
     "*** " + std::string(u.name) + " told you ***: " + msg + "\n";
@@ -477,6 +494,53 @@ void tell(std::string usr_input, int id, User* user_table, char* tell_buf) {
   // broadcast(yell_msg);
 }
 
+bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo info){
+  for (size_t i = 0; i < cmds.size(); i++) {
+    // sender
+    if (cmds[i].fd_type == '}'){
+      int from = std::stoi(out_file.substr(12, 2));
+      int to = std::stoi(out_file.substr(14, 2));
+
+      // user not exist
+      User to_user = get_user(to, info.user_table);
+      if (to_user.id == -1){
+        std::cout << "*** Error: user " << to << " does not exist yet. ***" << std::endl;
+        return false;
+      }
+      
+      // if named pipe exist
+      // if (access(out_file.c_str(), F_OK != -1)){
+      //   std::cout << "*** Error: the pipe " << from << "->" \
+      //   << to << " already exists. ***" << std::endl;
+      //   return false;
+      // }
+    }
+
+    // receiver
+    if (cmds[i].in_file != ""){
+      int from = std::stoi(cmds[i].in_file.substr(12, 2));
+      int to = std::stoi(cmds[i].in_file.substr(14, 2));
+      // if user exist
+      std::cout << cmds[i].in_file << std::endl;
+      
+      User from_user = get_user(from, info.user_table);
+      if (from_user.id == -1){
+        std::cout << "*** Error: user " << from << " does not exist yet. ***" << std::endl;
+        return false;
+      }
+
+      // if named pipe exist
+      struct stat sb;
+      if (stat(cmds[i].in_file.c_str(), &sb) == -1){
+        std::cout << "*** Error: the pipe " << from << "->" \
+        << to << " does not exist yet. ***" << std::endl;
+        return false;
+      }
+    }
+  }
+  
+  return true;
+}
 
 
 // build-in cmd ---------------------------------------------------------------------------------------

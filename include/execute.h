@@ -39,4 +39,6 @@ void who(int id, User* user_table);
 
 int build_in_cmd(std::string usr_input, ConnectInfo info);
 
+bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo info);
+
 #endif

@@ -22,6 +22,20 @@ void close_handler(int s) {
     std::cout << "server close..." << std::endl;
     shmdt(user_table);
     shmctl(shm_id, IPC_RMID, NULL);
+    
+    DIR* dp;
+    struct dirent* ep;
+    char* path = "./user_pipe/";
+    dp = opendir(path);
+    if (dp != NULL){
+        while (ep = readdir(dp)){
+            if (ep->d_type == DT_FIFO){
+                printf("remove %s\n", ep->d_name);
+                remove(ep->d_name);
+            }   
+        }
+    }
+
     exit(0);
 }
 
@@ -198,6 +212,11 @@ User get_user(int id, User* user_table){
             return user_table[i];
         }
     }
+    // not exist
+    User u;
+    u.id = -1;
+    strcpy(u.name, "not_exist");
+    return u;
 }
 
 int add_user(User* user_table, char* ip, char* port, int new_fd){
@@ -260,23 +279,36 @@ void remove_user(User* user_table, int id){
     }
 }
 
-void create_named_pipe(){
+int create_named_pipe(int from, int to){
     // FIFO file path 
     std::string fifo_path = "./user_pipe/"; 
+    // std::cout << "from = " << from << ", to = " << to << std::endl;
 
     // create named pipe
     // named_pipe format: [from][to]
     // e.g. ./user_pipe/0113
     int digit = 2;
+    std::string f_str = std::string(digit - std::to_string(from).length(), '0') + std::to_string(from);
+    std::string t_str = std::string(digit - std::to_string(to).length(), '0') + std::to_string(to);
+    std::string fifo_name = fifo_path + f_str + t_str;
+    int status =  mkfifo(fifo_name.c_str(), 0666); 
+    return status;
+}
 
-    for (size_t f = 0; f <= MAX_USER_NUM; f++){ // from
-        for (size_t t = 0; t <= MAX_USER_NUM; t++){ // to
-            std::string f_str = std::string(digit - std::to_string(f).length(), '0') + std::to_string(f);
-            std::string t_str = std::string(digit - std::to_string(t).length(), '0') + std::to_string(t);
-            std::string fifo_name = fifo_path + f_str + t_str;
-            mkfifo(fifo_name.c_str(), 0666); 
-        }
-    }
+int remove_named_pipe(int from, int to){
+    // FIFO file path 
+    std::string fifo_path = "./user_pipe/"; 
+    // std::cout << "from = " << from << ", to = " << to << std::endl;
+
+    // remove named pipe
+    // named_pipe format: [from][to]
+    // e.g. ./user_pipe/0113
+    int digit = 2;
+    std::string f_str = std::string(digit - std::to_string(from).length(), '0') + std::to_string(from);
+    std::string t_str = std::string(digit - std::to_string(to).length(), '0') + std::to_string(to);
+    std::string fifo_name = fifo_path + f_str + t_str;
+    int status = remove(fifo_name.c_str());
+    return status;
 }
 
 // main ---------------------------------------------------------------------
@@ -322,8 +354,6 @@ int main()
     init_user_table(user_table);
     memset(broadcast_buf, 0, 200);
     memset(tell_buf, 0, (MAX_USER_NUM+1)*MAX_TELL_LENGTH);
-
-    create_named_pipe();
     
     int status;
 
