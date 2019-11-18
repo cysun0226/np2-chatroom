@@ -20,11 +20,12 @@ int main()
     cmds = parsed_cmd.first;
 
     for (size_t i = 0; i < cmds.size(); i++){
-        std::cout << "cmd " << i << std::endl;
+        std::cout << "\ncmd " << i << std::endl;
         std::cout << cmds[i].cmd << std::endl;
         std::cout << "fd_type = " << cmds[i].fd_type << std::endl;
+        std::cout << "in_file = " << cmds[i].in_file << std::endl;
     }
-    std::cout << "out_file = " << parsed_cmd.second << std::endl;
+    std::cout << "\nout_file = " << parsed_cmd.second << std::endl;
 
     return 0;
 }

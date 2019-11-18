@@ -19,8 +19,10 @@ bool tell_table[MAX_USER_NUM+1][MAX_USER_NUM+1];
 
 // functions ---------------------------------------------------------------------
 void close_handler(int s) {
-    std::cout << "server close..." << std::endl;
+    std::cout << "\nserver close..." << std::endl;
     shmdt(user_table);
+    shmdt(broadcast_buf);
+    shmdt(tell_buf);
     shmctl(shm_id, IPC_RMID, NULL);
     
     DIR* dp;

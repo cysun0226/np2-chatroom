@@ -3,18 +3,29 @@
 #include "../include/execute.h" 
 #include "../include/server.h"
 
-
+bool interrupt = false;
 
 int get_cmd(ConnectInfo info){
   int status = SUCCESS;
   bool use_src = false;
 
   // prompt
-  std::cout << PROMPT_SYMBOL << " " << std::flush;
+  if (interrupt != true){
+    std::cout << PROMPT_SYMBOL << " " << std::flush;
+  }
+  interrupt = false;
+  
   // get user input
   std::vector<Command> cmds;
   std::string usr_input;
   std::getline(std::cin, usr_input);
+
+  // check if interrupt
+  if (std::cin.eof()){
+    interrupt = true;
+    std::cin.clear();
+    return SUCCESS;
+  }
 
   // check if built commands
   status = build_in_cmd(usr_input, info);
@@ -37,7 +48,7 @@ int get_cmd(ConnectInfo info){
   }
 
   // exec
-  exec_cmds(parsed_cmd);
+  exec_cmds(parsed_cmd, info);
   status = SUCCESS;
   
 
@@ -51,10 +62,18 @@ int npshell(ConnectInfo info){
   char default_path[] = "PATH=bin:.";
   putenv(default_path);
 
+  // set signal of user pipe
+  struct sigaction action;
+  action.sa_flags = SA_SIGINFO;
+  action.sa_sigaction = &receive_user_pipe;
+  sigaction(SIGUSR2, &action, NULL);
+
   int status;
   do{
     status = get_cmd(info);
   } while (status == SUCCESS);
+
+  std::cout << "exit np shell" << std::endl;
   
   return 0;
 }

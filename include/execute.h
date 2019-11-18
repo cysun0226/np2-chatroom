@@ -17,11 +17,11 @@ extern std::map<int, int> out_fd_map;
 
 void child_handler(int signo);
 
-int build_pipe(std::vector<Command> &cmds);
+int build_pipe(std::vector<Command> &cmds, ConnectInfo info);
 
 pid_t exec_cmd(Command cmd, bool last);
 
-int exec_cmds(std::pair<std::vector<Command>, std::string> parsed_cmd);
+int exec_cmds(std::pair<std::vector<Command>, std::string> parsed_cmd, ConnectInfo info);
 
 void clean_up();
 
@@ -40,5 +40,7 @@ void who(int id, User* user_table);
 int build_in_cmd(std::string usr_input, ConnectInfo info);
 
 bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo info);
+
+void receive_user_pipe(int sig, siginfo_t *info, void *extra);
 
 #endif

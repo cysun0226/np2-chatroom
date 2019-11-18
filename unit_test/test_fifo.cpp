@@ -1,4 +1,5 @@
 #include "../include/server.h"
+#include <unistd.h>
 
 
 void sig_handler(int s)
@@ -122,6 +123,7 @@ int main()
 
         if (pid == 0) // child process
         {
+            sleep(1);
             close(sockfd); // child does not need listener
             close(STDOUT_FILENO);
             close(STDIN_FILENO);
@@ -135,17 +137,29 @@ int main()
             // std::cout << "hihi" << std::endl;
 
             // dup2(new_fd, named_fd);
+            
             int named_fd = open("./user_pipe/named_pipe", O_RDONLY);
 
+            // while (1) {
+            //     char tmp;
+            //     if (read(named_fd, &tmp, 1) < 1) break;
+            //     printf("%c", tmp);
+            // }
+
             // std::cout << named_fd << std::endl;
-
-            while (1) {
-                char tmp;
-                if (read(named_fd, &tmp, 1) < 1) break;
-                printf("%c", tmp);
-            }
-
+            // dup2(named_fd, STDIN_FILENO);
+            
             close(named_fd);
+            
+            close(new_fd);
+            exit(0);
+
+            // execlp("bin/cat", "bin/cat", (char*) NULL);
+            exit(1);
+
+            
+
+            // close(named_fd);
 
             // if (send(new_fd, "Hellllo~\n", 10, 0) < 0){
             //     perror("server: send to client error");
@@ -158,24 +172,28 @@ int main()
         close(new_fd);
 
         // fork a process to execute bin to write to user pipe
-        pid_t pid_write = fork();
         int named_fd = open("./user_pipe/named_pipe", O_WRONLY);
+        std::cout << "write~~~~~" << std::endl;
+
+        pid_t pid_write = fork();
+
         if (pid_write == 0)
         {
-            // close(STDOUT_FILENO);
-            // close(STDIN_FILENO);
-            // close(STDERR_FILENO);
-            dup2(named_fd, STDOUT_FILENO);
+            // dup2(named_fd, STDOUT_FILENO);
+            // dup2(named_fd, STDERR_FILENO);
+
+            write(named_fd, "XDDDDD\n", 8); 
             close(named_fd);
 
-            execlp("bin/cat", "bin/cat", "test.html", (char*) NULL);
-            exit(1);
+            // execlp("bin/removetag0", "bin/removetag0", "test.html", (char*) NULL);
+            exit(0);
             // std::cout << "hiiiii" << std::endl;    
         }
 
         int status;
-        waitpid(pid_write, &status, WNOHANG);
         close(named_fd);
+        waitpid(pid_write, &status, WNOHANG);
+        // close(named_fd);
 
         
         

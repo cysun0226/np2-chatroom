@@ -10,11 +10,31 @@ std::vector<Pipe> pipe_table_bk;
 std::vector< std::pair <int*, int> > table_delete_bk;
 std::vector<std::pair <int*, int>> tmp_delete_bk;
 
+int user_pipe_table[MAX_USER_NUM+1];
 
 void child_handler(int signo){
     int status;
     // -1 : wait for any child
     while (waitpid(-1, &status, WNOHANG) > 0);
+}
+
+void receive_user_pipe(int sig, siginfo_t *info, void *extra) {
+   int act = info->si_value.sival_int;
+   
+   // from which user
+   int to = act % 100;
+   int from = ((act - to) / 100) % 100;
+
+   int digit = 2;
+   std::string f_str = std::string(digit - std::to_string(from).length(), '0') + std::to_string(from);
+   std::string t_str = std::string(digit - std::to_string(to).length(), '0') + std::to_string(to);
+   std::string fifo_name = "./user_pipe/" + f_str + t_str;
+
+   // open fifo
+   user_pipe_table[from] = open(fifo_name.c_str(), O_RDONLY);
+   if (user_pipe_table[from] < 0){
+     std::cout << "can't open fifo file" << std::endl;
+   }
 }
 
 pid_t exec_cmd(Command cmd, bool last){
@@ -135,7 +155,7 @@ pid_t exec_cmd(Command cmd, bool last){
   return pid;
 }
 
-int build_pipe(std::vector<Command> &cmds, std::string filename){
+int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo info){
   std::vector<int*> fd_list;
   /* Check if previous pipe occurs */
   for (size_t i = 0; i < cmds.size(); i++){
@@ -164,8 +184,8 @@ int build_pipe(std::vector<Command> &cmds, std::string filename){
   /* if receive input from user pipe */
   for (size_t i = 0; i < cmds.size(); i++){
     if (cmds[i].in_file != ""){
-      int receive_pipe_fd = open(cmds[i].in_file.c_str(), O_RDONLY);
-      cmds[i].in_fd = receive_pipe_fd;
+      int from = std::stoi(cmds[i].in_file.substr(12, 2));
+      cmds[i].in_fd = user_pipe_table[from];
     }
   }
   
@@ -184,15 +204,19 @@ int build_pipe(std::vector<Command> &cmds, std::string filename){
   if (cmds.back().fd_type == '}'){
     int from = std::stoi(filename.substr(12, 2));
     int to = std::stoi(filename.substr(14, 2));
-    
+
     // open a fifo
     create_named_pipe(from, to);
+
+    // send signal to the receiver
+    User to_user = get_user(to, info.user_table);
+    union sigval value;
+    value.sival_int = from*100 + to;
+    sigqueue(to_user.pid, SIGUSR2, value);
+    
     int user_pipe_fd;
     user_pipe_fd = open(filename.c_str(), O_WRONLY);
     cmds.back().out_fd = user_pipe_fd;
-    // send signal to the receiver
-    int digit = 2;
-    // std::string out_file = "./user_pipe/" + f_str + t_str;
   }
 
 
@@ -284,13 +308,13 @@ int build_pipe(std::vector<Command> &cmds, std::string filename){
   return outfile_fd;
 }
 
-int exec_cmds(std::pair<std::vector<Command>, std::string> parsed_cmd){
+int exec_cmds(std::pair<std::vector<Command>, std::string> parsed_cmd, ConnectInfo info){
     std::vector<Command> cmds = parsed_cmd.first;
     int status;
     pid_t last_pid;
 
     // build pipes
-    int outfile_fd = build_pipe(cmds, parsed_cmd.second);
+    int outfile_fd = build_pipe(cmds, parsed_cmd.second, info);
 
     // remove named pipes
     for (size_t i = 0; i < cmds.size(); i++){
@@ -520,9 +544,8 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
     if (cmds[i].in_file != ""){
       int from = std::stoi(cmds[i].in_file.substr(12, 2));
       int to = std::stoi(cmds[i].in_file.substr(14, 2));
-      // if user exist
-      std::cout << cmds[i].in_file << std::endl;
       
+      // if user exist
       User from_user = get_user(from, info.user_table);
       if (from_user.id == -1){
         std::cout << "*** Error: user " << from << " does not exist yet. ***" << std::endl;
