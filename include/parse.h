@@ -2,7 +2,8 @@
 #define PARSE_H
 
 #include "npshell.h"
+#include "server.h"
 
-std::pair <std::vector<Command>, std::string> parse_cmd(std::string usr_input);
+std::pair <std::vector<Command>, std::string> parse_cmd(std::string usr_input, ConnectInfo info);
 
 #endif

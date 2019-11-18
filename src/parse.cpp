@@ -1,6 +1,6 @@
 #include "../include/parse.h"
 
-std::pair <std::vector<Command>, std::string> parse_cmd(std::string usr_input) {
+std::pair <std::vector<Command>, std::string> parse_cmd(std::string usr_input, ConnectInfo info) {
     std::vector<Command> cmds;
     std::string out_file = "";
     std::stringstream ss;
@@ -28,12 +28,18 @@ std::pair <std::vector<Command>, std::string> parse_cmd(std::string usr_input) {
             }   
             // output to user pipe
             if (str[0] == '>' && str.size()>1){
-                out_file = str.substr(1);
+                int digit = 2;
+                std::string f_str = std::string(digit - std::to_string(info.id).length(), '0') + std::to_string(info.id);
+                std::string t_str = std::string(digit - str.substr(1).length(), '0') + str.substr(1);
+                out_file = "./user_pipe/" + f_str + t_str;
                 cmd.fd_type = '}';
             }
             // receive from user pipe
             if (str[0] == '<'){
-                out_file = str.substr(1);
+                int digit = 2;
+                std::string t_str = std::string(digit - std::to_string(info.id).length(), '0') + std::to_string(info.id);
+                std::string f_str = std::string(digit - str.substr(1).length(), '0') + str.substr(1);
+                out_file = "./user_pipe/" + f_str + t_str;
             }   
             cmds.push_back(cmd);
             buf.clear();

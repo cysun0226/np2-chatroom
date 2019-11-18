@@ -1,5 +1,6 @@
 #include "../include/parse.h"
 #include "../include/npshell.h"
+#include "../include/server.h"
 
 int main() 
 {
@@ -8,9 +9,13 @@ int main()
     std::string usr_input;
     std::getline(std::cin, usr_input);
 
+    // create a connect info
+    ConnectInfo ci;
+    ci.id = 4;
+
     // parse
     std::pair<std::vector<Command>, std::string> parsed_cmd\
-    = parse_cmd(usr_input);
+    = parse_cmd(usr_input, ci);
 
     cmds = parsed_cmd.first;
 
