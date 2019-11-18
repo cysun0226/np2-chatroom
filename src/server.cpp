@@ -315,7 +315,7 @@ int remove_named_pipe(int from, int to){
 
 // main ---------------------------------------------------------------------
 
-int main()
+int main(int argc, char* argv[])
 {
     // regist the ctrl-c exit
     signal(SIGINT, close_handler);
@@ -378,7 +378,7 @@ int main()
     // use address in bind (listen)
     hints.ai_flags = AI_PASSIVE; 
 
-    std::string PORT = "3490";
+    std::string PORT = argv[1];
     int BACKLOG = 10;
 
     // build a socket, and bind to the given port
