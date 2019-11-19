@@ -1,5 +1,5 @@
-#include "../include/server.h"
-#include "../include/npshell.h" 
+#include "../include/np_multi_proc.h"
+#include "../include/npshell_multi.h" 
 
 
 // variables ---------------------------------------------------------------------

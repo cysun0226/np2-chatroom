@@ -1,7 +1,7 @@
-#include "../include/npshell.h" 
-#include "../include/parse.h"
-#include "../include/execute.h" 
-#include "../include/server.h"
+#include "../include/npshell_multi.h" 
+#include "../include/parse_multi.h"
+#include "../include/execute_multi.h" 
+#include "../include/np_multi_proc.h"
 
 bool interrupt = false;
 

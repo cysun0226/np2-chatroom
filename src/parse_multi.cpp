@@ -1,4 +1,4 @@
-#include "../include/parse.h"
+#include "../include/parse_multi.h"
 
 std::pair <std::vector<Command>, std::string> parse_cmd(std::string usr_input, ConnectInfo info) {
     std::vector<Command> cmds;

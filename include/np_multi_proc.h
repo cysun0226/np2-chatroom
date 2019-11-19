@@ -1,5 +1,5 @@
-#ifndef SERVER_H
-#define SERVER_H
+#ifndef NP_MULTI_PROC_H
+#define NP_MULTI_PROC_H
 
 #include <sys/types.h>
 #include <sys/socket.h>

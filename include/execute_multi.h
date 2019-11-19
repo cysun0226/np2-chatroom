@@ -1,7 +1,7 @@
-#ifndef EXECUTE_H
-#define EXECUTE_H
+#ifndef EXECUTE_MULTI_H
+#define EXECUTE_MULTI_H
 
-#include "npshell.h"
+#include "npshell_multi.h"
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <fstream>

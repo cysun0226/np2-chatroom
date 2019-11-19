@@ -1,5 +1,5 @@
-#ifndef NPSHELL_H
-#define NPSHELL_H
+#ifndef NPSHELL_MULTI_H
+#define NPSHELL_MULTI_H
 
 #include <iostream>
 #include <string>
@@ -12,7 +12,7 @@
 #include <sys/types.h>
 #include <utility>
 #include <map>
-#include "server.h"
+#include "np_multi_proc.h"
 
 #define PROMPT_SYMBOL "%" 
 #define PIPE_BUFFER_SIZE 15000

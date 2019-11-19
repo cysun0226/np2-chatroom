@@ -1,5 +1,5 @@
-#include "../include/execute.h"
-#include "../include/server.h"
+#include "../include/execute_multi.h"
+#include "../include/np_multi_proc.h"
 
 std::vector<Pipe> pipe_table;
 std::vector< std::pair <int*, int> > table_delete;
