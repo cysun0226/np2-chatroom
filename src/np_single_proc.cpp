@@ -331,9 +331,9 @@ int main(int argc, char* argv[])
           else{
             std::string usr_input(client_input);
             memset(client_input, '\0', sizeof(client_input));
-            // pop the last char
-            usr_input.pop_back();
-            usr_input.pop_back();
+            // remove all \r \n in the input
+            usr_input.erase(std::remove(usr_input.begin(), usr_input.end(), '\r'), usr_input.end());
+            usr_input.erase(std::remove(usr_input.begin(), usr_input.end(), '\n'), usr_input.end());
             /* Save current stdout */
             int save_stdout = dup(STDOUT_FILENO);
             dup2(i, STDOUT_FILENO);

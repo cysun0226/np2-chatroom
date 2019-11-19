@@ -21,9 +21,12 @@ int get_cmd(ConnectInfo info){
   std::vector<Command> cmds;
   std::string usr_input;
   std::getline(std::cin, usr_input);
-  usr_input.pop_back();
+  
+  // remove all \r \n in the input
+  usr_input.erase(std::remove(usr_input.begin(), usr_input.end(), '\r'), usr_input.end());
+  usr_input.erase(std::remove(usr_input.begin(), usr_input.end(), '\n'), usr_input.end());
+
   info.usr_input = usr_input;
-  info.usr_input.pop_back();
 
   // check if interrupt
   if (std::cin.eof()){
