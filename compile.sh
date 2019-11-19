@@ -1,1 +1,1 @@
-g++ -Wall src/server.cpp  src/npshell.cpp src/parse.cpp src/execute.cpp -o server
+g++ src/np_multi_proc.cpp  src/npshell_multi.cpp src/parse_multi.cpp src/execute_multi.cpp -o server
