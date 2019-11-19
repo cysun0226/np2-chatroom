@@ -1,1 +1,1 @@
-g++ -Wall src/select_server.cpp src/parse.cpp src/execute_select.cpp src/select_npshell.cpp -o select_server 
+g++ -Wall src/np_single_proc.cpp src/parse_single.cpp src/execute_single.cpp src/npshell_single.cpp -o select_server 

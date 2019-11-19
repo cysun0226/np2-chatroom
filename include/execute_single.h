@@ -1,7 +1,7 @@
-#ifndef EXECUTE_SELECT_H
-#define EXECUTE_SELECT_H
+#ifndef EXECUTE_SINGLE_H
+#define EXECUTE_SINGLE_H
 
-#include "npshell_select.h"
+#include "npshell_single.h"
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <fstream>

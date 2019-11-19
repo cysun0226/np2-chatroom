@@ -1,6 +1,6 @@
-#include "../include/select_server.h"
-#include "../include/npshell_select.h"
-#include "../include/execute_select.h"
+#include "../include/np_single_proc.h"
+#include "../include/npshell_single.h"
+#include "../include/execute_single.h"
 
 
 User user_table[30];

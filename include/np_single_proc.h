@@ -1,5 +1,5 @@
-#ifndef SELECT_SERVER_H
-#define SELECT_SERVER_H
+#ifndef NP_SINGLE_PROC_H
+#define NP_SINGLE_PROC_H
 
 #include <sys/types.h>
 #include <sys/socket.h>

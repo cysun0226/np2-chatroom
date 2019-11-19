@@ -1,5 +1,5 @@
-#include "../include/execute_select.h"
-#include "../include/select_server.h"
+#include "../include/execute_single.h"
+#include "../include/np_single_proc.h"
 
 std::vector<Pipe> pipe_table;
 std::vector< std::pair <int*, int> > table_delete;

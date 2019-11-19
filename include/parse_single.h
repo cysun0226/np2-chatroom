@@ -1,8 +1,8 @@
-#ifndef PARSE_SELECT_H
-#define PARSE_SELECT_H
+#ifndef PARSE_SINGLE_H
+#define PARSE_SINGLE_H
 
-#include "npshell_select.h"
-#include "select_server.h"
+#include "npshell_single.h"
+#include "np_single_proc.h"
 
 std::pair <std::vector<Command>, std::string> parse_cmd(std::string usr_input, ConnectInfo info);
 

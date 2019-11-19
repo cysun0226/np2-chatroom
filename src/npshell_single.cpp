@@ -1,7 +1,7 @@
-#include "../include/npshell_select.h" 
-#include "../include/parse_select.h"
-#include "../include/execute_select.h" 
-#include "../include/select_server.h"
+#include "../include/npshell_single.h" 
+#include "../include/parse_single.h"
+#include "../include/execute_single.h" 
+#include "../include/np_single_proc.h"
 
 int run_cmd(std::string usr_input, ConnectInfo info){
   // get user input

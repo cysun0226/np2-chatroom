@@ -1,5 +1,5 @@
-#ifndef NPSHELL_SELECT_H
-#define NPSHELL_SELECT_H
+#ifndef NPSHELL_SINGLE_H
+#define NPSHELL_SINGLE_H
 
 #include <iostream>
 #include <string>
@@ -13,7 +13,7 @@
 #include <utility>
 #include <map>
 
-#include "../include/select_server.h"
+#include "../include/np_single_proc.h"
 
 
 
