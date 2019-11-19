@@ -10,7 +10,8 @@ std::vector<Pipe> pipe_table_bk;
 std::vector< std::pair <int*, int> > table_delete_bk;
 std::vector<std::pair <int*, int>> tmp_delete_bk;
 
-int user_pipe_table[MAX_USER_NUM+1];
+
+std::vector<UserPipe> user_pipe_table;
 
 void child_handler(int signo){
     int status;
@@ -166,7 +167,13 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
   for (size_t i = 0; i < cmds.size(); i++){
     if (cmds[i].in_file != ""){
       int from = std::stoi(cmds[i].in_file.substr(12, 2));
-      cmds[i].in_fd = user_pipe_table[from];
+      int to = std::stoi(cmds[i].in_file.substr(14, 2));
+      for (size_t i = 0; i < user_pipe_table.size(); i++){
+        if (user_pipe_table[i].from == from && user_pipe_table[i].to == to){
+          cmds[i].in_fd = user_pipe_table[i].fd[READ];
+          break;
+        }
+      }
     }
   }
   
@@ -186,18 +193,18 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
     int from = std::stoi(filename.substr(12, 2));
     int to = std::stoi(filename.substr(14, 2));
 
-    // open a fifo
-    // create_named_pipe(from, to);
-
-    // send signal to the receiver
-    User to_user = get_user_by_id(to);
-    union sigval value;
-    value.sival_int = from*100 + to;
-    sigqueue(to_user.pid, SIGUSR2, value);
+    // open a pipe
+    UserPipe up;
+    up.from = from;
+    up.to = to;
     
-    int user_pipe_fd;
-    user_pipe_fd = open(filename.c_str(), O_WRONLY);
-    cmds.back().out_fd = user_pipe_fd;
+    if (pipe(up.fd) < 0){
+      std::cerr << "[open user pipe error]" << std::endl;
+    }
+
+    user_pipe_table.push_back(up);
+    
+    cmds.back().out_fd = up.fd[WRITE];
   }
 
 
@@ -297,13 +304,21 @@ int exec_cmds(std::pair<std::vector<Command>, std::string> parsed_cmd, ConnectIn
     // build pipes
     int outfile_fd = build_pipe(cmds, parsed_cmd.second, info);
 
-    // remove named pipes
+    // remove used user pipes
     for (size_t i = 0; i < cmds.size(); i++){
       if (cmds[i].in_file != ""){
-        remove(cmds[i].in_file.c_str());
+        int from = std::stoi(cmds[i].in_file.substr(12, 2));
+        int to = std::stoi(cmds[i].in_file.substr(14, 2));
+        for (size_t i = 0; i < user_pipe_table.size(); i++){
+          if (user_pipe_table[i].from == from && user_pipe_table[i].to == to){
+            close(user_pipe_table[i].fd[READ]);
+            close(user_pipe_table[i].fd[WRITE]);
+            user_pipe_table[i] = user_pipe_table.back();
+            user_pipe_table.pop_back();
+          }
+        }
       }
     }
-    
 
     // execute commands
     // for (size_t i = 0; i < cmds.size(); i++){
@@ -432,11 +447,13 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
       }
       
       // if named pipe exist
-      // if (access(out_file.c_str(), F_OK != -1)){
-      //   std::cout << "*** Error: the pipe " << from << "->" \
-      //   << to << " already exists. ***" << std::endl;
-      //   return false;
-      // }
+      for (size_t i = 0; i < user_pipe_table.size(); i++){
+        if (user_pipe_table[i].to == to && user_pipe_table[i].from == from){
+          std::cout << "*** Error: the pipe " << from << "->" \
+          << to << " already exists. ***" << std::endl;
+          return false;
+        }
+      }
     }
 
     // receiver
@@ -452,11 +469,13 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
       }
 
       // if named pipe exist
-      struct stat sb;
-      if (stat(cmds[i].in_file.c_str(), &sb) == -1){
-        std::cout << "*** Error: the pipe " << from << "->" \
-        << to << " does not exist yet. ***" << std::endl;
-        return false;
+      std::vector<UserPipe> user_pipe_table;
+      for (size_t i = 0; i < user_pipe_table.size(); i++){
+        if (user_pipe_table[i].to == info.id && user_pipe_table[i].from == from_user.id){
+          std::cout << "*** Error: the pipe " << from << "->" \
+          << to << " does not exist yet. ***" << std::endl;
+          return false;
+        }
       }
     }
   }

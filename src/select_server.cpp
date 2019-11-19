@@ -5,6 +5,7 @@
 
 User user_table[30];
 
+
 // user -------------------------------------------------------------------------
 int add_user(char* ip, char* port, int new_fd){
     int new_user_id;

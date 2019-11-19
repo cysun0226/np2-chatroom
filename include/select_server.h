@@ -45,6 +45,13 @@ typedef struct {
     char* tell_buf;
 } ConnectInfo;
 
+typedef struct {
+    int from;
+    int to;
+    int fd[2];
+} UserPipe;
+
+
 // void broadcast(std::string);
 User get_user_by_id(int id);
 void who(int id, int client_fd);
