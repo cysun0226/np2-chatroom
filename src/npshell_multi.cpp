@@ -10,10 +10,12 @@ int get_cmd(ConnectInfo info){
   bool use_src = false;
 
   // prompt
-  if (interrupt != true){
-    std::cout << PROMPT_SYMBOL << " " << std::flush;
-  }
-  interrupt = false;
+  // if (interrupt != true){
+  //   std::cout << PROMPT_SYMBOL << " " << std::flush;
+  // }
+  // interrupt = false;
+
+  std::cout << PROMPT_SYMBOL << " " << std::flush;
   
   // get user input
   std::vector<Command> cmds;
