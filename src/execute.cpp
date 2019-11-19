@@ -543,7 +543,7 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
       
       // if named pipe exist
       struct stat sb;
-      if (stat(cmds[i].in_file.c_str(), &sb) == 0){
+      if (stat(out_file.c_str(), &sb) == 0){
         std::cout << "*** Error: the pipe " << from << "->" \
         << to << " already exists. ***" << std::endl;
         return false;

@@ -24,6 +24,8 @@ void close_handler(int s) {
     shmdt(broadcast_buf);
     shmdt(tell_buf);
     shmctl(shm_id, IPC_RMID, NULL);
+    shmctl(tell_shm_id, IPC_RMID, NULL);
+    shmctl(broadcast_shm_id, IPC_RMID, NULL);
     
     DIR* dp;
     struct dirent* ep;
@@ -33,7 +35,9 @@ void close_handler(int s) {
         while (ep = readdir(dp)){
             if (ep->d_type == DT_FIFO){
                 printf("remove %s\n", ep->d_name);
-                remove(ep->d_name);
+                std::string file_name(ep->d_name);
+                file_name = "./user_pipe/" + file_name;
+                remove(file_name.c_str());
             }   
         }
     }
@@ -279,6 +283,27 @@ void remove_user(User* user_table, int id){
             break;
         }
     }
+
+    // clean up non-read pipe
+    DIR* dp;
+    struct dirent* ep;
+    char* path = "./user_pipe/";
+    dp = opendir(path);
+    if (dp != NULL){
+        while (ep = readdir(dp)){
+            if (ep->d_type == DT_FIFO){
+                std::string file_name(ep->d_name);
+                file_name = "./user_pipe/" + file_name;
+                // std::cout << file_name << std::endl;
+                int from = std::stoi(file_name.substr(12, 2));
+                int to = std::stoi(file_name.substr(14, 2));
+                if (to == id){
+                    remove(file_name.c_str());
+                }
+            }   
+        }
+    }
+
 }
 
 int create_named_pipe(int from, int to){
@@ -527,14 +552,15 @@ int main(int argc, char* argv[])
             npshell(info);
 
             std::string left_msg = \
-            "*** User '" + std::string(get_user(user_id, user_table).name) + "' left. ***\n";
-
-            // execlp("bin/npshell", "bin/npshell", (char*) NULL);
-
+            "*** User '" + std::string(get_user(user_id, user_table).name) + "' left. ***";
             close(new_fd);
             remove_user(user_table, user_id);
-            broadcast(left_msg);
+            
+            std::cout << left_msg << std::endl;
+
+            broadcast(left_msg+"\n");
             kill(getppid(), SIGUSR1);
+            
             shmdt(user_table);
             shmdt(broadcast_buf);
             shmdt(tell_buf);

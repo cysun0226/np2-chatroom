@@ -20,6 +20,7 @@ int get_cmd(ConnectInfo info){
   std::string usr_input;
   std::getline(std::cin, usr_input);
   info.usr_input = usr_input;
+  info.usr_input.pop_back();
 
   // check if interrupt
   if (std::cin.eof()){
@@ -73,8 +74,6 @@ int npshell(ConnectInfo info){
   do{
     status = get_cmd(info);
   } while (status == SUCCESS);
-
-  std::cout << "exit np shell" << std::endl;
   
   return 0;
 }
