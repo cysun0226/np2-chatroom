@@ -29,8 +29,8 @@ void close_handler(int s) {
     
     DIR* dp;
     struct dirent* ep;
-    char* path = "./user_pipe/";
-    dp = opendir(path);
+    std::string path = "./user_pipe/";
+    dp = opendir(path.c_str());
     if (dp != NULL){
         while (ep = readdir(dp)){
             if (ep->d_type == DT_FIFO){
@@ -271,8 +271,8 @@ void remove_user(User* user_table, int id){
     // clean up non-read pipe
     DIR* dp;
     struct dirent* ep;
-    char* path = "./user_pipe/";
-    dp = opendir(path);
+    std::string path = "./user_pipe/";
+    dp = opendir(path.c_str());
     if (dp != NULL){
         while (ep = readdir(dp)){
             if (ep->d_type == DT_FIFO){
