@@ -182,6 +182,7 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
         for (size_t j = 0; j < cmds[i].args.size(); j++){
           user_cmd_ss << cmds[i].args[j] << " ";
         }
+	user_cmd_ss << " " << cmds[i].fd_type << " ";
       }
 
       std::string usr_input = user_cmd_ss.str();
@@ -502,7 +503,6 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
       }
 
       // if named pipe exist
-      std::vector<UserPipe> user_pipe_table;
       bool exist = false;
       std::cout << "user_pipe_table.size() = " << user_pipe_table.size() << std::endl;
       for (size_t i = 0; i < user_pipe_table.size(); i++){
@@ -511,11 +511,11 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
           exist = true;
         }
       }
-      // if (exist == false){
-      //   std::cout << "*** Error: the pipe " << from << "->" \
-      //     << to << " does not exist yet. ***" << std::endl;
-      //     return false;
-      // }
+      if (exist == false){
+         std::cout << "*** Error: the pipe " << from << "->" \
+          << to << " does not exist yet. ***" << std::endl;
+           return false;
+      }
     }
   }
   
