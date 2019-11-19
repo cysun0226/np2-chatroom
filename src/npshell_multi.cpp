@@ -21,6 +21,7 @@ int get_cmd(ConnectInfo info){
   std::vector<Command> cmds;
   std::string usr_input;
   std::getline(std::cin, usr_input);
+  usr_input.pop_back();
   info.usr_input = usr_input;
   info.usr_input.pop_back();
 

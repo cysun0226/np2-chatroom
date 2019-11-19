@@ -333,6 +333,7 @@ int main(int argc, char* argv[])
             memset(client_input, '\0', sizeof(client_input));
             // pop the last char
             usr_input.pop_back();
+            usr_input.pop_back();
             /* Save current stdout */
             int save_stdout = dup(STDOUT_FILENO);
             dup2(i, STDOUT_FILENO);
