@@ -265,6 +265,7 @@ int main(int argc, char* argv[])
 
           if (new_fd == -1) {
             perror("accept");
+            continue;
           } 
           // new user connect
           else {

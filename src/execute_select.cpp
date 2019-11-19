@@ -168,12 +168,29 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
     if (cmds[i].in_file != ""){
       int from = std::stoi(cmds[i].in_file.substr(12, 2));
       int to = std::stoi(cmds[i].in_file.substr(14, 2));
+      std::cout << "user_pipe_table.size() = " << user_pipe_table.size() << std::endl;
       for (size_t i = 0; i < user_pipe_table.size(); i++){
         if (user_pipe_table[i].from == from && user_pipe_table[i].to == to){
           cmds[i].in_fd = user_pipe_table[i].fd[READ];
           break;
         }
       }
+
+      // broadcast receive
+      std::stringstream user_cmd_ss;
+      for (size_t i = 0; i < cmds.size(); i++){
+        for (size_t j = 0; j < cmds[i].args.size(); j++){
+          user_cmd_ss << cmds[i].args[j] << " ";
+        }
+      }
+
+      std::string usr_input = user_cmd_ss.str();
+      usr_input.pop_back();
+
+      std::stringstream ss;
+      ss << "*** " << get_user_by_id(to).name << " (#" << to << ") just received from " \
+      << get_user_by_id(from).name << " (#" << from << ") by '" << usr_input << "' ***\n";
+      broadcast(ss.str());
     }
   }
   
@@ -202,9 +219,24 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
       std::cerr << "[open user pipe error]" << std::endl;
     }
 
-    user_pipe_table.push_back(up);
-    
+    user_pipe_table.push_back(up);    
     cmds.back().out_fd = up.fd[WRITE];
+
+    // broadcast user pipe create
+    std::stringstream user_cmd_ss;
+    for (size_t i = 0; i < cmds.size(); i++){
+      for (size_t j = 0; j < cmds[i].args.size(); j++){
+        user_cmd_ss << cmds[i].args[j] << " ";
+      }
+    }
+
+    std::string usr_input = user_cmd_ss.str();
+    usr_input.pop_back();
+
+    std::stringstream ss;
+    ss << "*** " << get_user_by_id(from).name << " (#" << from << ") just piped '"\
+    << usr_input << "' to " << get_user_by_id(to).name << " (#" << to << ") ***\n";
+    broadcast(ss.str());
   }
 
 
@@ -307,6 +339,7 @@ int exec_cmds(std::pair<std::vector<Command>, std::string> parsed_cmd, ConnectIn
     // remove used user pipes
     for (size_t i = 0; i < cmds.size(); i++){
       if (cmds[i].in_file != ""){
+        std::cout << "remove user pipe" << std::endl;
         int from = std::stoi(cmds[i].in_file.substr(12, 2));
         int to = std::stoi(cmds[i].in_file.substr(14, 2));
         for (size_t i = 0; i < user_pipe_table.size(); i++){
@@ -470,13 +503,19 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
 
       // if named pipe exist
       std::vector<UserPipe> user_pipe_table;
+      bool exist = false;
+      std::cout << "user_pipe_table.size() = " << user_pipe_table.size() << std::endl;
       for (size_t i = 0; i < user_pipe_table.size(); i++){
+        std::cout << "user_pipe_table[i] = " << i << " to= " << info.id << " from= " << from_user.id << std::endl;
         if (user_pipe_table[i].to == info.id && user_pipe_table[i].from == from_user.id){
-          std::cout << "*** Error: the pipe " << from << "->" \
-          << to << " does not exist yet. ***" << std::endl;
-          return false;
+          exist = true;
         }
       }
+      // if (exist == false){
+      //   std::cout << "*** Error: the pipe " << from << "->" \
+      //     << to << " does not exist yet. ***" << std::endl;
+      //     return false;
+      // }
     }
   }
   

@@ -58,6 +58,7 @@ void who(int id, int client_fd);
 void name(int id, std::string user_name);
 void yell(int id, std::string msg);
 void tell(int from, int to, std::string msg);
+void broadcast(std::string msg);
 // int create_named_pipe(int from, int to);
 // extern std::vector<User>* user_table;
 #define MAX_USER_NUM 30
