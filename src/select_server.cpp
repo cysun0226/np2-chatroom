@@ -49,13 +49,14 @@ void init_user_table(){
 }
 
 void remove_user(int id){
+  remove_user_pipe(id);
   for (size_t i = 0; i < MAX_USER_NUM; i++){
         // std::cout << "user[i].id = " << user_table[i].id << " id = " << id << std::endl;
         if (user_table[i].id == id){
             user_table[i].id = -1;
             break;
         }
-    }
+  }
 }
 
 User get_user_by_id(int id){
@@ -338,8 +339,9 @@ int main(int argc, char* argv[])
 
             // execute user
             ConnectInfo info = {
-                .id = get_user_by_fd(i).id ,
-                .user_table = user_table
+                .id = get_user_by_fd(i).id,
+                .user_table = user_table,
+                .usr_input = usr_input
             };
             int status = run_cmd(usr_input, info);
 

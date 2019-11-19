@@ -39,6 +39,7 @@ typedef struct {
     User* user_table;
     char* broadcast_buf;
     char* tell_buf;
+    std::string usr_input;
 } ConnectInfo;
 
 void broadcast(std::string);

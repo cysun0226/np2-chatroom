@@ -43,4 +43,6 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
 
 void receive_user_pipe(int sig, siginfo_t *info, void *extra);
 
+void remove_user_pipe(int id);
+
 #endif

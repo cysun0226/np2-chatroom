@@ -185,7 +185,14 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
   for (size_t i = 0; i < cmds.size(); i++){
     if (cmds[i].in_file != ""){
       int from = std::stoi(cmds[i].in_file.substr(12, 2));
+      int to = std::stoi(cmds[i].in_file.substr(14, 2));
       cmds[i].in_fd = user_pipe_table[from];
+
+      // broadcast receive
+      std::stringstream ss;
+      ss << "*** " << get_user(to, info.user_table).name << " (#" << to << ") just received from " \
+      << get_user(from, info.user_table).name << " (#" << from << ") by '" << info.usr_input << "' ***\n";
+      broadcast(ss.str());
     }
   }
   
@@ -217,6 +224,12 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
     int user_pipe_fd;
     user_pipe_fd = open(filename.c_str(), O_WRONLY);
     cmds.back().out_fd = user_pipe_fd;
+
+    // broacast build pipe
+    std::stringstream ss;
+    ss << "*** " << get_user(from, info.user_table).name << " (#" << from << ") just piped '"\
+    << info.usr_input << "' to " << get_user(to, info.user_table).name << " (#" << to << ") ***\n";
+    broadcast(ss.str());
   }
 
 
@@ -512,11 +525,6 @@ void tell(std::string usr_input, int id, User* user_table, char* tell_buf) {
   union sigval value;
   value.sival_int = 10000 + id*100 + to_id;
   sigqueue(getppid(), SIGUSR2, value);
-
-  // User user = get_user(id, user_table);
-  // std::string yell_msg = 
-  //     "*** " + std::string(user.name) + " yelled ***: " + usr_input + "\n";
-  // broadcast(yell_msg);
 }
 
 bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo info){
@@ -534,11 +542,12 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
       }
       
       // if named pipe exist
-      // if (access(out_file.c_str(), F_OK != -1)){
-      //   std::cout << "*** Error: the pipe " << from << "->" \
-      //   << to << " already exists. ***" << std::endl;
-      //   return false;
-      // }
+      struct stat sb;
+      if (stat(cmds[i].in_file.c_str(), &sb) == 0){
+        std::cout << "*** Error: the pipe " << from << "->" \
+        << to << " already exists. ***" << std::endl;
+        return false;
+      }
     }
 
     // receiver

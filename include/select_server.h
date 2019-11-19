@@ -41,8 +41,7 @@ typedef struct {
 typedef struct {
     int id;
     User* user_table;
-    char* broadcast_buf;
-    char* tell_buf;
+    std::string usr_input;
 } ConnectInfo;
 
 typedef struct {

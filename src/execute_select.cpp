@@ -177,20 +177,9 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
       }
 
       // broadcast receive
-      std::stringstream user_cmd_ss;
-      for (size_t i = 0; i < cmds.size(); i++){
-        for (size_t j = 0; j < cmds[i].args.size(); j++){
-          user_cmd_ss << cmds[i].args[j] << " ";
-        }
-	user_cmd_ss << " " << cmds[i].fd_type << " ";
-      }
-
-      std::string usr_input = user_cmd_ss.str();
-      usr_input.pop_back();
-
       std::stringstream ss;
       ss << "*** " << get_user_by_id(to).name << " (#" << to << ") just received from " \
-      << get_user_by_id(from).name << " (#" << from << ") by '" << usr_input << "' ***\n";
+      << get_user_by_id(from).name << " (#" << from << ") by '" << info.usr_input << "' ***\n";
       broadcast(ss.str());
     }
   }
@@ -224,19 +213,9 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
     cmds.back().out_fd = up.fd[WRITE];
 
     // broadcast user pipe create
-    std::stringstream user_cmd_ss;
-    for (size_t i = 0; i < cmds.size(); i++){
-      for (size_t j = 0; j < cmds[i].args.size(); j++){
-        user_cmd_ss << cmds[i].args[j] << " ";
-      }
-    }
-
-    std::string usr_input = user_cmd_ss.str();
-    usr_input.pop_back();
-
     std::stringstream ss;
     ss << "*** " << get_user_by_id(from).name << " (#" << from << ") just piped '"\
-    << usr_input << "' to " << get_user_by_id(to).name << " (#" << to << ") ***\n";
+    << info.usr_input << "' to " << get_user_by_id(to).name << " (#" << to << ") ***\n";
     broadcast(ss.str());
   }
 
@@ -594,4 +573,16 @@ int build_in_cmd(std::string usr_input, ConnectInfo info){
   }
 
   return EXECUTE;
+}
+
+
+void remove_user_pipe(int id){
+  for (size_t i = 0; i < user_pipe_table.size(); i++){
+    if (user_pipe_table[i].to == id){
+      close(user_pipe_table[i].fd[WRITE]);
+      close(user_pipe_table[i].fd[READ]);
+      user_pipe_table[i] = user_pipe_table.back();
+      user_pipe_table.pop_back();
+    }
+  }
 }
