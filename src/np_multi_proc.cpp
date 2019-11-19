@@ -181,22 +181,6 @@ void close_other_pipe(int id, User* user_table){
     }
 }
 
-void *get_in_addr(struct sockaddr *sa)
-{
-    if (sa->sa_family == AF_INET) {
-        return &(((struct sockaddr_in*)sa)->sin_addr);
-    }
-    return &(((struct sockaddr_in6*)sa)->sin6_addr);
-}
-
-void *get_in_port(struct sockaddr *sa)
-{
-    if (sa->sa_family == AF_INET) {
-        return &(((struct sockaddr_in*)sa)->sin_port);
-    }
-    return &(((struct sockaddr_in6*)sa)->sin6_port);
-}
-
 void init_user_table(User* user_table){
     for (size_t i = 0; i < MAX_USER_NUM; i++){
         user_table[i].id = -1;
@@ -351,6 +335,7 @@ int main(int argc, char* argv[])
     // regist broadcast/tell handler
     struct sigaction action;
     action.sa_flags = SA_SIGINFO;
+    action.sa_flags = SA_RESTART;
     action.sa_sigaction = &receive_msg;
     sigaction(SIGUSR2, &action, NULL);
 
@@ -404,7 +389,6 @@ int main(int argc, char* argv[])
     hints.ai_flags = AI_PASSIVE; 
 
     std::string PORT = argv[1];
-    int BACKLOG = 10;
 
     // build a socket, and bind to the given port
     int get_addr_info_status;
@@ -440,7 +424,7 @@ int main(int argc, char* argv[])
     freeaddrinfo(servinfo); // release the used addrinfo
 
     // listen to the socket
-    if (listen(sockfd, BACKLOG) < 0) {
+    if (listen(sockfd, MAX_USER_NUM) < 0) {
         perror("server: can't listen");
         exit(1);
     }
