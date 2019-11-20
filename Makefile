@@ -32,7 +32,8 @@ np_multi_proc : $(multi_obj)
 
 .PHONY: clean
 clean :
-	rm np_simple &(simple_obj)
-	rm np_single_proc &(single_obj)
-	rm np_multi_proc &(multi_obj)
+	rm np_simple
+	rm np_single_proc
+	rm np_multi_proc
+	rm ./src/*.o
 
