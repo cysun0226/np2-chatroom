@@ -1,7 +1,7 @@
 #include "../include/execute_single.h"
 #include "../include/np_single_proc.h"
 
-std::vector<Pipe> pipe_table;
+// std::vector<Pipe> pipe_table;
 std::vector< std::pair <int*, int> > table_delete;
 std::vector<std::pair <int*, int>> tmp_delete;
 std::map<int, int> out_fd_map;
@@ -11,7 +11,18 @@ std::vector< std::pair <int*, int> > table_delete_bk;
 std::vector<std::pair <int*, int>> tmp_delete_bk;
 
 
+std::vector<SendPipe> send_table;
 std::vector<UserPipe> user_pipe_table;
+
+
+int get_user_pipe_table_idx(int id){
+  for (size_t i = 0; i < user_pipe_table.size(); i++){
+    if (id == user_pipe_table[i].id){
+      return i;
+    }
+  }
+  return -1;
+}
 
 void child_handler(int signo){
     int status;
@@ -139,25 +150,26 @@ pid_t exec_cmd(Command cmd, bool last){
 
 int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo info){
   std::vector<int*> fd_list;
+  int table_idx = get_user_pipe_table_idx(info.id);
   /* Check if previous pipe occurs */
   for (size_t i = 0; i < cmds.size(); i++){
-    for (size_t p = 0; p < pipe_table.size(); p++){
+    for (size_t p = 0; p < user_pipe_table[table_idx].pipe_table.size(); p++){
       // exist pipe to stdin
-      if (pipe_table[p].out_target ==  cmds[i].idx){
-          cmds[i].in_fd = pipe_table[p].fd[READ];
-          std::pair <int*, int> table_entry(pipe_table[p].fd, p);
+      if (user_pipe_table[table_idx].pipe_table[p].out_target ==  cmds[i].idx){
+          cmds[i].in_fd = user_pipe_table[table_idx].pipe_table[p].fd[READ];
+          std::pair <int*, int> table_entry(user_pipe_table[table_idx].pipe_table[p].fd, p);
           // can delete after used
           table_delete.push_back(table_entry);
       }
       // output target has existing pipe
-      if (cmds[i].pipe_out == pipe_table[p].out_target){
-          cmds[i].out_fd = pipe_table[p].fd[WRITE];
+      if (cmds[i].pipe_out == user_pipe_table[table_idx].pipe_table[p].out_target){
+          cmds[i].out_fd = user_pipe_table[table_idx].pipe_table[p].fd[WRITE];
           out_fd_map[cmds[i].out_fd] = i;  //  update last user of this pipe
       }
       // next input has existing pipe
-      if (cmds[i].pipe_out == PIPE_STDOUT && cmds[i].idx+1==pipe_table[p].out_target &&
+      if (cmds[i].pipe_out == PIPE_STDOUT && cmds[i].idx+1==user_pipe_table[table_idx].pipe_table[p].out_target &&
           cmds[i].fd_type != '-'){
-          cmds[i].out_fd = pipe_table[p].fd[WRITE];
+          cmds[i].out_fd = user_pipe_table[table_idx].pipe_table[p].fd[WRITE];
           out_fd_map[cmds[i].out_fd] = i;  //  update last user of this pipe
       }
     }
@@ -168,10 +180,10 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
     if (cmds[i].in_file != ""){
       int from = std::stoi(cmds[i].in_file.substr(12, 2));
       int to = std::stoi(cmds[i].in_file.substr(14, 2));
-      std::cout << "user_pipe_table.size() = " << user_pipe_table.size() << std::endl;
-      for (size_t i = 0; i < user_pipe_table.size(); i++){
-        if (user_pipe_table[i].from == from && user_pipe_table[i].to == to){
-          cmds[i].in_fd = user_pipe_table[i].fd[READ];
+      std::cout << "send_table.size() = " << send_table.size() << std::endl;
+      for (size_t i = 0; i < send_table.size(); i++){
+        if (send_table[i].from == from && send_table[i].to == to){
+          cmds[i].in_fd = send_table[i].fd[READ];
           break;
         }
       }
@@ -201,7 +213,7 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
     int to = std::stoi(filename.substr(14, 2));
 
     // open a pipe
-    UserPipe up;
+    SendPipe up;
     up.from = from;
     up.to = to;
     
@@ -209,7 +221,7 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
       std::cerr << "[open user pipe error]" << std::endl;
     }
 
-    user_pipe_table.push_back(up);    
+    send_table.push_back(up);    
     cmds.back().out_fd = up.fd[WRITE];
 
     // broadcast user pipe create
@@ -295,7 +307,7 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
               // update pipe_out for following commands
               cmds[i].pipe_out += (cmds[i].idx);
               Pipe p = {fd, cmds[i].pipe_out};
-              pipe_table.push_back(p);
+              user_pipe_table[table_idx].pipe_table.push_back(p);
           }
       }
 
@@ -322,12 +334,12 @@ int exec_cmds(std::pair<std::vector<Command>, std::string> parsed_cmd, ConnectIn
         std::cout << "remove user pipe" << std::endl;
         int from = std::stoi(cmds[i].in_file.substr(12, 2));
         int to = std::stoi(cmds[i].in_file.substr(14, 2));
-        for (size_t i = 0; i < user_pipe_table.size(); i++){
-          if (user_pipe_table[i].from == from && user_pipe_table[i].to == to){
-            close(user_pipe_table[i].fd[READ]);
-            close(user_pipe_table[i].fd[WRITE]);
-            user_pipe_table[i] = user_pipe_table.back();
-            user_pipe_table.pop_back();
+        for (size_t i = 0; i < send_table.size(); i++){
+          if (send_table[i].from == from && send_table[i].to == to){
+            close(send_table[i].fd[READ]);
+            close(send_table[i].fd[WRITE]);
+            send_table[i] = send_table.back();
+            send_table.pop_back();
           }
         }
       }
@@ -346,24 +358,25 @@ int exec_cmds(std::pair<std::vector<Command>, std::string> parsed_cmd, ConnectIn
     out_fd_map.clear();
 
     // delete used pipe in pipe_table
+    int table_idx = get_user_pipe_table_idx(info.id);
     for (size_t i = 0; i < table_delete.size(); i++){
         // delete fd
         delete[] table_delete[i].first; 
         // delete entry in pipe_table
-        pipe_table[table_delete[i].second] = pipe_table.back();
-        pipe_table.pop_back();
+        user_pipe_table[table_idx].pipe_table[table_delete[i].second] = user_pipe_table[table_idx].pipe_table.back();
+        user_pipe_table[table_idx].pipe_table.pop_back();
     }
     table_delete.clear();
 
     // update out_target in pipe_table
-    for (size_t i = 0; i < pipe_table.size(); i++){
-        pipe_table[i].out_target -= cmds.size();
+    for (size_t i = 0; i < user_pipe_table[table_idx].pipe_table.size(); i++){
+        user_pipe_table[table_idx].pipe_table[i].out_target -= cmds.size();
     }
 
     return status;
 }
 
-void clean_up(){
+void clean_up(ConnectInfo info){
     // delete tmp pipes for current cmds
     for (size_t i = 0; i < tmp_delete.size(); i++){
         delete [] tmp_delete[i].first;
@@ -371,17 +384,18 @@ void clean_up(){
     tmp_delete.clear();
 
     // delete used pipe in pipe_table
+    int table_idx = get_user_pipe_table_idx(info.id);
     for (size_t i = 0; i < table_delete.size(); i++){
         // delete fd
         delete[] table_delete[i].first; 
         // delete entry in pipe_table
-        pipe_table[table_delete[i].second] = pipe_table.back();
-        pipe_table.pop_back();
+        user_pipe_table[table_idx].pipe_table[table_delete[i].second] = user_pipe_table[table_idx].pipe_table.back();
+        user_pipe_table[table_idx].pipe_table.pop_back();
     }
     table_delete.clear();
 
-    for (size_t i = 0; i < pipe_table.size(); i++){
-        delete[] pipe_table[i].fd;
+    for (size_t i = 0; i < user_pipe_table[table_idx].pipe_table.size(); i++){
+        delete[] user_pipe_table[table_idx].pipe_table[i].fd;
     }
 }
 
@@ -412,39 +426,40 @@ std::string print_env(std::string usr_input){
   return std::string(ptr);
 }
 
-void update_up_target(){
+void update_target(ConnectInfo info){
+  int table_idx = get_user_pipe_table_idx(info.id);
   // update out_target in pipe_table
-    for (size_t i = 0; i < pipe_table.size(); i++){
-        pipe_table[i].out_target -= 1;
+    for (size_t i = 0; i < user_pipe_table[table_idx].pipe_table.size(); i++){
+        user_pipe_table[table_idx].pipe_table[i].out_target -= 1;
     }
 }
 
-std::string get_cmd_from_source(std::string f_name){
-  std::stringstream ss;
-  ss.str(f_name);
-  std::string file_name;
-  ss >> file_name;
+// std::string get_cmd_from_source(std::string f_name){
+//   std::stringstream ss;
+//   ss.str(f_name);
+//   std::string file_name;
+//   ss >> file_name;
 
-  std::ifstream t(file_name);
-  std::string cmd_file(
-    (std::istreambuf_iterator<char>(t)),
-    std::istreambuf_iterator<char>()
-  );
+//   std::ifstream t(file_name);
+//   std::string cmd_file(
+//     (std::istreambuf_iterator<char>(t)),
+//     std::istreambuf_iterator<char>()
+//   );
 
-  // back up pipes
-  // std::vector<Pipe> pipe_table_bk;
-  pipe_table_bk.clear();
-  pipe_table_bk.assign(pipe_table.begin(), pipe_table.end());
-  pipe_table.clear();
+//   // back up pipes
+//   // std::vector<Pipe> pipe_table_bk;
+//   pipe_table_bk.clear();
+//   pipe_table_bk.assign(pipe_table.begin(), pipe_table.end());
+//   pipe_table.clear();
 
-  return cmd_file;
+//   return cmd_file;
 
-}
+// }
 
-void restore_src_table(){
-  pipe_table.clear();
-  pipe_table.assign(pipe_table_bk.begin(), pipe_table_bk.end()); 
-}
+// void restore_src_table(){
+//   pipe_table.clear();
+//   pipe_table.assign(pipe_table_bk.begin(), pipe_table_bk.end()); 
+// }
 
 bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo info){
   for (size_t i = 0; i < cmds.size(); i++) {
@@ -461,8 +476,8 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
       }
       
       // if named pipe exist
-      for (size_t i = 0; i < user_pipe_table.size(); i++){
-        if (user_pipe_table[i].to == to && user_pipe_table[i].from == from){
+      for (size_t i = 0; i < send_table.size(); i++){
+        if (send_table[i].to == to && send_table[i].from == from){
           std::cout << "*** Error: the pipe " << from << "->" \
           << to << " already exists. ***" << std::endl;
           return false;
@@ -484,10 +499,10 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
 
       // if named pipe exist
       bool exist = false;
-      std::cout << "user_pipe_table.size() = " << user_pipe_table.size() << std::endl;
-      for (size_t i = 0; i < user_pipe_table.size(); i++){
-        std::cout << "user_pipe_table[i] = " << i << " to= " << info.id << " from= " << from_user.id << std::endl;
-        if (user_pipe_table[i].to == info.id && user_pipe_table[i].from == from_user.id){
+      std::cout << "send_table.size() = " << send_table.size() << std::endl;
+      for (size_t i = 0; i < send_table.size(); i++){
+        std::cout << "send_table[i] = " << i << " to= " << info.id << " from= " << from_user.id << std::endl;
+        if (send_table[i].to == info.id && send_table[i].from == from_user.id){
           exist = true;
         }
       }
@@ -508,14 +523,14 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
 int build_in_cmd(std::string usr_input, ConnectInfo info){ 
   // if EOF or exit
   if (std::cin.eof() || usr_input.substr(0, 4) == "exit"){
-    clean_up();
+    clean_up(info);
     return EXIT;
   }
 
   // env command
   if (usr_input.substr(0, 6) == "setenv"){
     set_env(usr_input.substr(7), info.id);
-    update_up_target();
+    update_target(info);
     return SUCCESS;
   }
   if (usr_input.substr(0, 8) == "printenv"){
@@ -523,7 +538,7 @@ int build_in_cmd(std::string usr_input, ConnectInfo info){
     if (env_var != ""){
       std::cout << env_var << std::endl; 
     }
-    update_up_target();
+    update_target(info);
     return SUCCESS;
   }
 
@@ -578,12 +593,33 @@ int build_in_cmd(std::string usr_input, ConnectInfo info){
 
 
 void remove_user_pipe(int id){
+  for (size_t i = 0; i < send_table.size(); i++){
+    if (send_table[i].to == id){
+      close(send_table[i].fd[WRITE]);
+      close(send_table[i].fd[READ]);
+      send_table[i] = send_table.back();
+      send_table.pop_back();
+    }
+  }
+}
+
+void pipe_table_add_user(int id){
+  UserPipe up;
+  up.id = id;
+  user_pipe_table.push_back(up);
+}
+
+void pipe_table_remove_user(int id){
   for (size_t i = 0; i < user_pipe_table.size(); i++){
-    if (user_pipe_table[i].to == id){
-      close(user_pipe_table[i].fd[WRITE]);
-      close(user_pipe_table[i].fd[READ]);
+    if (user_pipe_table[i].id == id){
+      for (size_t j = 0; j < user_pipe_table[i].pipe_table.size(); j++){
+        close(user_pipe_table[i].pipe_table[j].fd[READ]);
+        close(user_pipe_table[i].pipe_table[j].fd[WRITE]);
+        delete [] user_pipe_table[i].pipe_table[j].fd;
+      }
       user_pipe_table[i] = user_pipe_table.back();
       user_pipe_table.pop_back();
+      return;
     }
   }
 }

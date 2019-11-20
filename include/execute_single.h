@@ -13,6 +13,11 @@ extern std::vector< std::pair <int*, int> > table_delete;
 extern std::vector<std::pair <int*, int>> tmp_delete;
 extern std::map<int, int> out_fd_map;
 
+typedef struct {
+    int id;
+    std::vector<Pipe> pipe_table;
+} UserPipe;
+
 // functions
 
 void child_handler(int signo);
@@ -29,7 +34,7 @@ void set_env(std::string usr_input);
 
 std::string print_env(std::string);
 
-void update_up_target();
+void update_target(ConnectInfo info);
 
 std::string get_cmd_from_source(std::string f_name);
 
@@ -44,5 +49,9 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
 void receive_user_pipe(int sig, siginfo_t *info, void *extra);
 
 void remove_user_pipe(int id);
+
+void pipe_table_add_user(int id);
+
+void pipe_table_remove_user(int id);
 
 #endif

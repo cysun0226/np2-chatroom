@@ -49,7 +49,7 @@ typedef struct {
     int from;
     int to;
     int fd[2];
-} UserPipe;
+} SendPipe;
 
 typedef struct {
     int id;

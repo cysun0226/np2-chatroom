@@ -39,6 +39,8 @@ int add_user(char* ip, char* port, int new_fd){
         }
     }
 
+    pipe_table_add_user(new_user_id);
+
     return new_user_id;
 }
 
@@ -104,6 +106,7 @@ void remove_env_var(int id){
 void remove_user(int id){
   remove_user_pipe(id);
   remove_env_var(id);
+  pipe_table_remove_user(id);
   for (size_t i = 0; i < MAX_USER_NUM; i++){
         // std::cout << "user[i].id = " << user_table[i].id << " id = " << id << std::endl;
         if (user_table[i].id == id){
