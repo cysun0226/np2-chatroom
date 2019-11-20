@@ -336,7 +336,9 @@ int main(int argc, char* argv[])
             usr_input.erase(std::remove(usr_input.begin(), usr_input.end(), '\n'), usr_input.end());
             /* Save current stdout */
             int save_stdout = dup(STDOUT_FILENO);
+            int save_stderr = dup(STDERR_FILENO);
             dup2(i, STDOUT_FILENO);
+            dup2(i, STDERR_FILENO);
 
             // execute user
             ConnectInfo info = {
@@ -361,7 +363,8 @@ int main(int argc, char* argv[])
             
             
             /* Restore stdout */
-            dup2(save_stdout, 1);
+            dup2(save_stdout, STDOUT_FILENO);
+            dup2(save_stderr, STDERR_FILENO);
           }
 
             
