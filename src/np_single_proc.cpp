@@ -3,7 +3,7 @@
 #include "../include/execute_single.h"
 
 
-User user_table[30];
+User user_table[MAX_USER_NUM];
 std::vector<UserEnv> user_env;
 
 
@@ -368,7 +368,7 @@ int main(int argc, char* argv[])
             broadcast(login_msg);
             
             // first prompt
-            send(new_fd, "% ", 3, 0);
+            send(new_fd, "% ", 2, 0);
           }
         } 
 
@@ -419,15 +419,16 @@ int main(int argc, char* argv[])
 
             // prompt
             if (status == SUCCESS){
-              send(i, "% ", 3, 0);
+              send(i, "% ", 2, 0);
             }
             else{ // close pipe
               std::string left_msg = \
                 "*** User '" + std::string(get_user_by_fd(i).name) + "' left. ***\n";
-              broadcast(left_msg);
+	      send(i, left_msg.c_str(), left_msg.length(), 0);
+	      remove_user(user_id);
               close(i);
               FD_CLR(i, &server_fd);
-              remove_user(user_id);
+	      broadcast(left_msg);
             }
             
             
