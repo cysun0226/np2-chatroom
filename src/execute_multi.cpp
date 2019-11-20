@@ -109,14 +109,14 @@ pid_t exec_cmd(Command cmd, bool last){
   // pid > 0, parent
   default:{
     // close useless pipe
-    for (size_t i = 0; i < tmp_delete.size(); i++){
-      if (cmd.in_fd == tmp_delete[i].first[READ]){
-        close(cmd.in_fd); 
-      }
-      if(cmd.idx == tmp_delete[i].second){
-        close(tmp_delete[i].first[WRITE]);
-      }
-    }
+    // for (size_t i = 0; i < tmp_delete.size(); i++){
+    //   if (cmd.in_fd == tmp_delete[i].first[READ]){
+    //     close(cmd.in_fd); 
+    //   }
+    //   if(cmd.idx == tmp_delete[i].second){
+    //     close(tmp_delete[i].first[WRITE]);
+    //   }
+    // }
 
     if (last){
       // close pipe

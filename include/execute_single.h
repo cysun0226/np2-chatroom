@@ -46,8 +46,6 @@ int build_in_cmd(std::string usr_input, ConnectInfo info);
 
 bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo info);
 
-void receive_user_pipe(int sig, siginfo_t *info, void *extra);
-
 void remove_user_pipe(int id);
 
 void pipe_table_add_user(int id);

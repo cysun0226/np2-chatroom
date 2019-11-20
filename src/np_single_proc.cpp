@@ -261,7 +261,7 @@ int main(int argc, char* argv[])
   char* PORT = argv[1];
 
   if ((rv = getaddrinfo(NULL, PORT, &hints, &ai)) != 0) {
-    fprintf(stderr, "selectserver: %s\n", gai_strerror(rv));
+    fprintf(stderr, "select_server: %s\n", gai_strerror(rv));
     exit(1);
   }
 
@@ -291,7 +291,7 @@ int main(int argc, char* argv[])
   freeaddrinfo(ai);
 
   // listen
-  if (listen(listener, 10) == -1) {
+  if (listen(listener, MAX_USER_NUM) == -1) {
     perror("listen");
     exit(3);
   }
@@ -307,10 +307,14 @@ int main(int argc, char* argv[])
   while(true) {
     client_fds = server_fd;
 
-    if (select(fdmax+1, &client_fds, NULL, NULL, NULL) == -1) {
+    int select_status = select(fdmax+1, &client_fds, NULL, NULL, NULL);
+
+    if (select_status == -1) {
+      // fprintf(stderr, "%s\n", explain_select(fdmax+1,
+      //   &client_fds, NULL, NULL, NULL));
+      std::cout << "select error " << strerror(errno) << std::endl;
       continue;
-      std::cout << ("select error ") << std::endl;
-      exit(4);
+      // exit(4);
     }
 
     // find updated data in the current connections
@@ -394,6 +398,7 @@ int main(int argc, char* argv[])
           // get input from user
           else{
             std::string usr_input(client_input);
+            
             memset(client_input, '\0', sizeof(client_input));
             // remove all \r \n in the input
             usr_input.erase(std::remove(usr_input.begin(), usr_input.end(), '\r'), usr_input.end());
@@ -424,11 +429,11 @@ int main(int argc, char* argv[])
             else{ // close pipe
               std::string left_msg = \
                 "*** User '" + std::string(get_user_by_fd(i).name) + "' left. ***\n";
-	      send(i, left_msg.c_str(), left_msg.length(), 0);
-	      remove_user(user_id);
+              broadcast(left_msg);
+              remove_user(user_id);
               close(i);
               FD_CLR(i, &server_fd);
-	      broadcast(left_msg);
+              std::cout << "user" << user_id << "left" << std::endl;
             }
             
             
