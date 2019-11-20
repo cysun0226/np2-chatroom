@@ -22,7 +22,7 @@
 #include <dirent.h>
 
 
-#define BROADCAST_SIG -1
+#define BROADCAST_SIG 9999
 
 typedef struct {
     int id;

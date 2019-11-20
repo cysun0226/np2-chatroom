@@ -10,23 +10,15 @@ int get_cmd(ConnectInfo info){
   bool use_src = false;
 
   // prompt
-  // if (interrupt != true){
-  //   std::cout << PROMPT_SYMBOL << " " << std::flush;
-  // }
-  // interrupt = false;
-
-  std::cout << PROMPT_SYMBOL << " " << std::flush;
+  if (interrupt != true){
+    std::cout << PROMPT_SYMBOL << " " << std::flush;
+  }
+  interrupt = false;
   
   // get user input
   std::vector<Command> cmds;
   std::string usr_input;
   std::getline(std::cin, usr_input);
-  
-  // remove all \r \n in the input
-  usr_input.erase(std::remove(usr_input.begin(), usr_input.end(), '\r'), usr_input.end());
-  usr_input.erase(std::remove(usr_input.begin(), usr_input.end(), '\n'), usr_input.end());
-
-  info.usr_input = usr_input;
 
   // check if interrupt
   if (std::cin.eof()){
@@ -34,6 +26,12 @@ int get_cmd(ConnectInfo info){
     std::cin.clear();
     return SUCCESS;
   }
+  
+  // remove all \r \n in the input
+  usr_input.erase(std::remove(usr_input.begin(), usr_input.end(), '\r'), usr_input.end());
+  usr_input.erase(std::remove(usr_input.begin(), usr_input.end(), '\n'), usr_input.end());
+
+  info.usr_input = usr_input;
 
   // check if built commands
   status = build_in_cmd(usr_input, info);

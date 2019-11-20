@@ -56,7 +56,7 @@ void remove_user_handler(int s) {
 }
 
 void broadcast(std::string msg){
-    // std::cout << msg << std::endl;
+    // std::cout << "exibroadcast: " << msg << std::endl;
     // raise(SIGUSR1);
     strcpy(broadcast_buf, msg.c_str());
     
@@ -86,6 +86,7 @@ void broadcast(std::string msg){
 
 void send_broadcast(){
     std::string msg(broadcast_buf);
+    // std::cout << "send_broadcast: " << msg << std::endl;
     for (size_t i = 0; i < MAX_USER_NUM; i++){
         if (user_table[i].id != -1){
             send(user_table[i].fd, msg.c_str(), msg.size(), 0);
@@ -130,6 +131,8 @@ void receive_broadcast(int signum) {
 
 void receive_msg(int sig, siginfo_t *info, void *extra) {
    int act = info->si_value.sival_int;
+
+//    std::cout << "act = " << act << std::endl;
    
    // broadcast
    if (act == BROADCAST_SIG){
@@ -335,7 +338,7 @@ int main(int argc, char* argv[])
     // regist broadcast/tell handler
     struct sigaction action;
     action.sa_flags = SA_SIGINFO;
-    action.sa_flags = SA_RESTART;
+    // action.sa_flags = SA_RESTART;
     action.sa_sigaction = &receive_msg;
     sigaction(SIGUSR2, &action, NULL);
 
