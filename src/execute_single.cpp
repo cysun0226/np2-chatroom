@@ -180,7 +180,6 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
     if (cmds[i].in_file != ""){
       int from = std::stoi(cmds[i].in_file.substr(12, 2));
       int to = std::stoi(cmds[i].in_file.substr(14, 2));
-      std::cout << "send_table.size() = " << send_table.size() << std::endl;
       for (size_t i = 0; i < send_table.size(); i++){
         if (send_table[i].from == from && send_table[i].to == to){
           cmds[i].in_fd = send_table[i].fd[READ];
@@ -331,7 +330,6 @@ int exec_cmds(std::pair<std::vector<Command>, std::string> parsed_cmd, ConnectIn
     // remove used user pipes
     for (size_t i = 0; i < cmds.size(); i++){
       if (cmds[i].in_file != ""){
-        std::cout << "remove user pipe" << std::endl;
         int from = std::stoi(cmds[i].in_file.substr(12, 2));
         int to = std::stoi(cmds[i].in_file.substr(14, 2));
         for (size_t i = 0; i < send_table.size(); i++){
@@ -471,14 +469,14 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
       // user not exist
       User to_user = get_user_by_id(to);
       if (to_user.id == -1){
-        std::cout << "*** Error: user " << to << " does not exist yet. ***" << std::endl;
+        std::cout << "*** Error: user #" << to << " does not exist yet. ***" << std::endl;
         return false;
       }
       
       // if named pipe exist
       for (size_t i = 0; i < send_table.size(); i++){
         if (send_table[i].to == to && send_table[i].from == from){
-          std::cout << "*** Error: the pipe " << from << "->" \
+          std::cout << "*** Error: the pipe #" << from << "->#" \
           << to << " already exists. ***" << std::endl;
           return false;
         }
@@ -493,21 +491,19 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
       // if user exist
       User from_user = get_user_by_id(from);
       if (from_user.id == -1){
-        std::cout << "*** Error: user " << from << " does not exist yet. ***" << std::endl;
+        std::cout << "*** Error: user #" << from << " does not exist yet. ***" << std::endl;
         return false;
       }
 
       // if named pipe exist
       bool exist = false;
-      std::cout << "send_table.size() = " << send_table.size() << std::endl;
       for (size_t i = 0; i < send_table.size(); i++){
-        std::cout << "send_table[i] = " << i << " to= " << info.id << " from= " << from_user.id << std::endl;
         if (send_table[i].to == info.id && send_table[i].from == from_user.id){
           exist = true;
         }
       }
       if (exist == false){
-         std::cout << "*** Error: the pipe " << from << "->" \
+         std::cout << "*** Error: the pipe #" << from << "->#" \
           << to << " does not exist yet. ***" << std::endl;
            return false;
       }
@@ -577,7 +573,7 @@ int build_in_cmd(std::string usr_input, ConnectInfo info){
     // check if exist
     User to_user = get_user_by_id(to_id);
     if (to_user.id == -1){
-      std::cout << "*** Error: user " << to_id << " does not exist yet. ***" << std::endl;
+      std::cout << "*** Error: user #" << to_id << " does not exist yet. ***" << std::endl;
       return SUCCESS;
     }
 

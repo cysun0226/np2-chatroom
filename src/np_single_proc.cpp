@@ -312,7 +312,7 @@ int main(int argc, char* argv[])
     if (select_status == -1) {
       // fprintf(stderr, "%s\n", explain_select(fdmax+1,
       //   &client_fds, NULL, NULL, NULL));
-      std::cout << "select error " << strerror(errno) << std::endl;
+      // std::cout << "select error " << strerror(errno) << std::endl;
       continue;
       // exit(4);
     }
@@ -433,7 +433,6 @@ int main(int argc, char* argv[])
               remove_user(user_id);
               close(i);
               FD_CLR(i, &server_fd);
-              std::cout << "user" << user_id << "left" << std::endl;
             }
             
             

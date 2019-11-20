@@ -510,7 +510,7 @@ void tell(std::string usr_input, int id, User* user_table, char* tell_buf) {
   // check if exist
   User to_user = get_user(to_id, user_table);
   if (to_user.id == -1){
-    std::cout << "*** Error: user " << to_id << " does not exist yet. ***" << std::endl;
+    std::cout << "*** Error: user #" << to_id << " does not exist yet. ***" << std::endl;
     return;
   }
 
@@ -537,7 +537,7 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
       // user not exist
       User to_user = get_user(to, info.user_table);
       if (to_user.id == -1){
-        std::cout << "*** Error: user " << to << " does not exist yet. ***" << std::endl;
+        std::cout << "*** Error: user #" << to << " does not exist yet. ***" << std::endl;
         return false;
       }
       
@@ -558,7 +558,7 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
       // if user exist
       User from_user = get_user(from, info.user_table);
       if (from_user.id == -1){
-        std::cout << "*** Error: user " << from << " does not exist yet. ***" << std::endl;
+        std::cout << "*** Error: user #" << from << " does not exist yet. ***" << std::endl;
         return false;
       }
 
