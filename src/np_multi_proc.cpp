@@ -56,32 +56,22 @@ void remove_user_handler(int s) {
 }
 
 void broadcast(std::string msg){
-    // std::cout << "exibroadcast: " << msg << std::endl;
     // raise(SIGUSR1);
+    msg.pop_back();
     strcpy(broadcast_buf, msg.c_str());
     
     union sigval value;
     value.sival_int = BROADCAST_SIG;
-    sigqueue(main_pid, SIGUSR2, value);
+    // sigqueue(main_pid, SIGUSR2, value);
 
-    // for (size_t i = 0; i < MAX_USER_NUM; i++){
-    //     if (user_table[i].id != -1){
-    //         // kill(user_table[i].pid, SIGUSR1);
-    //         union sigval value;
-    //         value.sival_int = BORADCAST_SIG;
-    //         std::cout << "user_table[" << i << "].pid = " << user_table[i].pid << std::endl;
-    //         sigqueue(user_table[i].pid, SIGUSR1, value);
-    //     }
-    // }
-
-    // for (size_t i = 0; i < MAX_USER_NUM; i++){
-    //     if (user_table[i].id != -1){
-    //         std::cout << "user_table[" << i << "].fd = " << user_table[i].fd << std::endl;
-    //         send(user_table[i].fd, msg.c_str(), msg.size(), 0);
-    //     }
-    // }
+    for (size_t i = 0; i < MAX_USER_NUM; i++){
+        if (user_table[i].id != -1){
+            // std::cout << "user_table[" << i << "].fd = " << user_table[i].fd << std::endl;
+            // send(user_table[i].fd, msg.c_str(), msg.length(), 0);
+            kill(user_table[i].pid, SIGUSR1);
+        }
+    }
 }
-
 
 
 void send_broadcast(){
@@ -89,7 +79,7 @@ void send_broadcast(){
     // std::cout << "send_broadcast: " << msg << std::endl;
     for (size_t i = 0; i < MAX_USER_NUM; i++){
         if (user_table[i].id != -1){
-            send(user_table[i].fd, msg.c_str(), msg.size(), 0);
+            send(user_table[i].fd, msg.c_str(), msg.length(), 0);
         }
     }
     broadcast_flag = false;
@@ -110,8 +100,8 @@ User get_user_by_name(std::string name){
 }
 
 void receive_broadcast(int signum) {
-   std::cout << broadcast_buf << std::endl;
    std::string msg(broadcast_buf);
+   std::cout << broadcast_buf << std::endl;
    
    // if user exit
 //    if (msg.find("left") != std::string::npos) {
@@ -506,7 +496,7 @@ int main(int argc, char* argv[])
             close_other_pipe(user_id, user_table);
 
             // signal(SIGUSR1, SIG_IGN);
-            // signal(SIGUSR1, receive_broadcast);
+            signal(SIGUSR1, receive_broadcast);
 
             // regist broadcast/tell handler
             // struct sigaction action;
