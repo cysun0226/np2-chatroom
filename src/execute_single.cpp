@@ -385,13 +385,14 @@ void clean_up(){
     }
 }
 
-void set_env(std::string usr_input) {
+void set_env(std::string usr_input, int id) {
   std::stringstream ss;
   ss.str(usr_input);
   std::string var, value, cmd_str;
   ss >> var >> value;
 
   setenv(var.c_str(), value.c_str(), 1);
+  update_user_env(id, var, value);
 }
 
 std::string print_env(std::string usr_input){
@@ -513,7 +514,7 @@ int build_in_cmd(std::string usr_input, ConnectInfo info){
 
   // env command
   if (usr_input.substr(0, 6) == "setenv"){
-    set_env(usr_input.substr(7));
+    set_env(usr_input.substr(7), info.id);
     update_up_target();
     return SUCCESS;
   }

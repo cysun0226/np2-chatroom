@@ -19,6 +19,7 @@
 #include <fcntl.h> 
 #include <sys/stat.h>
 #include <dirent.h>
+#include <map>
 
 #include <unistd.h>
 #include <netinet/in.h>
@@ -50,6 +51,11 @@ typedef struct {
     int fd[2];
 } UserPipe;
 
+typedef struct {
+    int id;
+    std::map<std::string, std::string> env_var;
+} UserEnv;
+
 
 // void broadcast(std::string);
 User get_user_by_id(int id);
@@ -58,6 +64,7 @@ void name(int id, std::string user_name);
 void yell(int id, std::string msg);
 void tell(int from, int to, std::string msg);
 void broadcast(std::string msg);
+void update_user_env(int id, std::string name, std::string value);
 // int create_named_pipe(int from, int to);
 // extern std::vector<User>* user_table;
 #define MAX_USER_NUM 30

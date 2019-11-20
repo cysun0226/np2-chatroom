@@ -4,6 +4,7 @@
 
 
 User user_table[30];
+std::vector<UserEnv> user_env;
 
 
 // user -------------------------------------------------------------------------
@@ -48,8 +49,61 @@ void init_user_table(){
     }
 }
 
+void update_user_env(int id, std::string name, std::string value){
+  // add to user_env_table
+  for (size_t i = 0; i < user_env.size(); i++){
+    if (user_env[i].id == id){
+      user_env[i].env_var[name] = value;
+      break;
+    }
+  }
+}
+
+void set_user_env(int id){
+  // set env var
+  for (size_t i = 0; i < user_env.size(); i++){
+    if (user_env[i].id == id){
+      std::map<std::string, std::string>::iterator iter;
+      for(iter = user_env[i].env_var.begin(); iter != user_env[i].env_var.end(); iter++){
+        setenv(iter->first.c_str(), iter->second.c_str(), 1);
+      }
+      break;
+    }
+  }
+}
+
+void restore_user_env(int id){
+  // set env var
+  for (size_t i = 0; i < user_env.size(); i++){
+    if (user_env[i].id == id){
+      std::map<std::string, std::string>::iterator iter;
+      for(iter = user_env[i].env_var.begin(); iter != user_env[i].env_var.end(); iter++){
+        unsetenv(iter->first.c_str());
+      }
+      break;
+    }
+  }
+}
+
+void remove_env_var(int id){
+  // remove env var
+  for (size_t i = 0; i < MAX_USER_NUM; i++){
+    if (user_table[i].id == id){
+      for (size_t j = 0; j < user_env.size(); j++){
+        if (user_env[j].id == id){
+          user_env[j] = user_env.back();
+          user_env.pop_back();
+          return;
+        }
+      }
+      break;
+    }
+  }
+}
+
 void remove_user(int id){
   remove_user_pipe(id);
+  remove_env_var(id);
   for (size_t i = 0; i < MAX_USER_NUM; i++){
         // std::cout << "user[i].id = " << user_table[i].id << " id = " << id << std::endl;
         if (user_table[i].id == id){
@@ -252,7 +306,7 @@ int main(int argc, char* argv[])
 
     if (select(fdmax+1, &client_fds, NULL, NULL, NULL) == -1) {
       continue;
-      perror("select");
+      std::cout << ("select error ") << std::endl;
       exit(4);
     }
 
@@ -274,12 +328,13 @@ int main(int argc, char* argv[])
             // get client ip and port
             char ip_str[NI_MAXHOST];
             char port_str[NI_MAXSERV];
+            int new_user_id;
 
             if (getnameinfo((struct sockaddr *)&client_addr, 
                 addr_size, ip_str, sizeof(ip_str), port_str, sizeof(port_str), 
                 NI_NUMERICHOST | NI_NUMERICSERV) == 0){
                 printf("select_server: got connection from %s:%s\n", ip_str, port_str);
-                add_user(ip_str, port_str, new_fd);
+                new_user_id = add_user(ip_str, port_str, new_fd);
             }
 
             // add new client to server_fd
@@ -289,6 +344,12 @@ int main(int argc, char* argv[])
             if (new_fd > fdmax) {
               fdmax = new_fd;
             }
+
+            // add user env
+            UserEnv ue;
+            ue.id = new_user_id;
+            ue.env_var["PATH"] = "bin:.";
+            user_env.push_back(ue);
 
             // show welcome msg
             std::string welcome_msg = 
@@ -334,15 +395,20 @@ int main(int argc, char* argv[])
             // remove all \r \n in the input
             usr_input.erase(std::remove(usr_input.begin(), usr_input.end(), '\r'), usr_input.end());
             usr_input.erase(std::remove(usr_input.begin(), usr_input.end(), '\n'), usr_input.end());
-            /* Save current stdout */
+            
+            // save current stdout
             int save_stdout = dup(STDOUT_FILENO);
             int save_stderr = dup(STDERR_FILENO);
             dup2(i, STDOUT_FILENO);
             dup2(i, STDERR_FILENO);
 
+            // set user env
+            int user_id = get_user_by_fd(i).id;
+            set_user_env(user_id);
+
             // execute user
             ConnectInfo info = {
-                .id = get_user_by_fd(i).id,
+                .id = user_id,
                 .user_table = user_table,
                 .usr_input = usr_input
             };
@@ -353,18 +419,19 @@ int main(int argc, char* argv[])
               send(i, "% ", 3, 0);
             }
             else{ // close pipe
-              close(i);
-              FD_CLR(i, &server_fd);
-              remove_user(get_user_by_fd(i).id);
               std::string left_msg = \
                 "*** User '" + std::string(get_user_by_fd(i).name) + "' left. ***\n";
               broadcast(left_msg);
+              close(i);
+              FD_CLR(i, &server_fd);
+              remove_user(user_id);
             }
             
             
-            /* Restore stdout */
+            // Restore stdout/err & env
             dup2(save_stdout, STDOUT_FILENO);
             dup2(save_stderr, STDERR_FILENO);
+            restore_user_env(user_id);
           }
 
             
