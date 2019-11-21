@@ -1,6 +1,5 @@
-#include "../include/parse.h"
-#include "../include/npshell.h"
-#include "../include/server.h"
+#include "../include/parse_multi.h"
+#include "../include/np_multi_proc.h"
 
 int main() 
 {
@@ -11,7 +10,7 @@ int main()
 
     // create a connect info
     ConnectInfo ci;
-    ci.id = 4;
+    ci.id = 99;
 
     // parse
     std::pair<std::vector<Command>, std::string> parsed_cmd\
