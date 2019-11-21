@@ -591,18 +591,30 @@ int build_in_cmd(std::string usr_input, ConnectInfo info){
 void remove_user_pipe(int id){
   // mark delete target
   std::vector<int> del_target;
+  std::vector<int> not_delete_idx;
   for (size_t i = 0; i < send_table.size(); i++){
     if (send_table[i].to == id || send_table[i].from == id){
       close(send_table[i].fd[WRITE]);
       close(send_table[i].fd[READ]);
       del_target.push_back(i);
     }
+    else{
+      not_delete_idx.push_back(i);
+    }
   }
   // delete
-  for (size_t i = 0; i < del_target.size(); i++){
-    send_table[del_target[i]] = send_table.back();
-    send_table.pop_back();
+  // for (size_t i = 0; i < del_target.size(); i++){
+  //   send_table[del_target[i]] = send_table.back();
+  //   send_table.pop_back();
+  // }
+
+  // copy to delete
+  std::vector<SendPipe> new_send_table;
+  for (size_t i = 0; i < not_delete_idx.size(); i++){
+    new_send_table.push_back(send_table[i]);
   }
+
+  send_table = new_send_table;
 }
 
 void pipe_table_add_user(int id){
