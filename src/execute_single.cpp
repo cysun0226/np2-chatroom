@@ -180,9 +180,9 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
     if (cmds[i].in_file != ""){
       int from = std::stoi(cmds[i].in_file.substr(12, 2));
       int to = std::stoi(cmds[i].in_file.substr(14, 2));
-      for (size_t i = 0; i < send_table.size(); i++){
-        if (send_table[i].from == from && send_table[i].to == to){
-          cmds[i].in_fd = send_table[i].fd[READ];
+      for (size_t j = 0; j < send_table.size(); j++){
+        if (send_table[j].from == from && send_table[j].to == to){
+          cmds[i].in_fd = send_table[j].fd[READ];
           break;
         }
       }
@@ -332,12 +332,13 @@ int exec_cmds(std::pair<std::vector<Command>, std::string> parsed_cmd, ConnectIn
       if (cmds[i].in_file != ""){
         int from = std::stoi(cmds[i].in_file.substr(12, 2));
         int to = std::stoi(cmds[i].in_file.substr(14, 2));
-        for (size_t i = 0; i < send_table.size(); i++){
-          if (send_table[i].from == from && send_table[i].to == to){
-            close(send_table[i].fd[READ]);
-            close(send_table[i].fd[WRITE]);
-            send_table[i] = send_table.back();
+        for (size_t j = 0; j < send_table.size(); j++){
+          if (send_table[j].from == from && send_table[j].to == to){
+            close(send_table[j].fd[READ]);
+            close(send_table[j].fd[WRITE]);
+            send_table[j] = send_table.back();
             send_table.pop_back();
+            break;
           }
         }
       }
