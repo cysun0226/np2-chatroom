@@ -590,7 +590,7 @@ int build_in_cmd(std::string usr_input, ConnectInfo info){
 
 void remove_user_pipe(int id){
   for (size_t i = 0; i < send_table.size(); i++){
-    if (send_table[i].to == id){
+    if (send_table[i].to == id || send_table[i].from == id){
       close(send_table[i].fd[WRITE]);
       close(send_table[i].fd[READ]);
       send_table[i] = send_table.back();

@@ -484,7 +484,6 @@ int main(int argc, char* argv[])
         send_broadcast();
 
         // fork to handle connection
-        std::cout << "new_fd = " << new_fd << std::endl;
         // pid_t ppid = getpid();
         // std::cout << "parent_pid = " << ppid << std::endl;
         pid_t pid = fork();
