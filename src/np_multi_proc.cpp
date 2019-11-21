@@ -274,7 +274,7 @@ void remove_user(User* user_table, int id){
                 // std::cout << file_name << std::endl;
                 int from = std::stoi(file_name.substr(12, 2));
                 int to = std::stoi(file_name.substr(14, 2));
-                if (to == id){
+                if (to == id || from == id){
                     remove(file_name.c_str());
                 }
             }   
