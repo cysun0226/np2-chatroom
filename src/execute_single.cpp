@@ -589,13 +589,19 @@ int build_in_cmd(std::string usr_input, ConnectInfo info){
 
 
 void remove_user_pipe(int id){
+  // mark delete target
+  std::vector<int> del_target;
   for (size_t i = 0; i < send_table.size(); i++){
     if (send_table[i].to == id || send_table[i].from == id){
       close(send_table[i].fd[WRITE]);
       close(send_table[i].fd[READ]);
-      send_table[i] = send_table.back();
-      send_table.pop_back();
+      del_target.push_back(i);
     }
+  }
+  // delete
+  for (size_t i = 0; i < del_target.size(); i++){
+    send_table[del_target[i]] = send_table.back();
+    send_table.pop_back();
   }
 }
 

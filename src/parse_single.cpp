@@ -24,7 +24,7 @@ std::pair <std::vector<Command>, std::string> parse_cmd(std::string usr_input, C
                 if (buf[i][0] == '<'){
                     int digit = 2;
                     std::string t_str = std::string(digit - std::to_string(info.id).length(), '0') + std::to_string(info.id);
-                    std::string f_str = std::string(digit - str.substr(1).length(), '0') + str.substr(1);
+                    std::string f_str = std::string(digit - buf[i].substr(1).length(), '0') + buf[i].substr(1);
                     cmd.in_file = "./user_pipe/" + f_str + t_str;
                 }
                 
@@ -43,6 +43,17 @@ std::pair <std::vector<Command>, std::string> parse_cmd(std::string usr_input, C
                 std::string t_str = std::string(digit - str.substr(1).length(), '0') + str.substr(1);
                 out_file = "./user_pipe/" + f_str + t_str;
                 cmd.fd_type = '}';
+
+                // if receive from other user
+                if (ss.str().empty() != true){
+                    ss >> str;
+                    if (str[0] == '<'){
+                        int digit = 2;
+                        std::string t_str = std::string(digit - std::to_string(info.id).length(), '0') + std::to_string(info.id);
+                        std::string f_str = std::string(digit - str.substr(1).length(), '0') + str.substr(1);
+                        cmd.in_file = "./user_pipe/" + f_str + t_str;
+                    }
+                }
             }
             
             cmds.push_back(cmd);
