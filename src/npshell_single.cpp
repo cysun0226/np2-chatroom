@@ -19,6 +19,7 @@ int run_cmd(std::string usr_input, ConnectInfo info){
 
   // check if user exist
   if (cmd_user_exist(parsed_cmd.first, parsed_cmd.second, info) == false){
+    update_target(info);
     return SUCCESS;
   }
 

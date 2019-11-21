@@ -57,6 +57,10 @@ pid_t exec_cmd(Command cmd, bool last){
   // child
   case 0:{
     // reditect I/O
+    // std::cout << "cmd.in_fd = " << cmd.in_fd << std::endl;
+    // std::cout << "cmd.out_fd = " << cmd.out_fd << std::endl;
+    // std::cout << "table_delete size = " << table_delete.size() << std::endl;
+
     dup2(cmd.in_fd, STDIN_FILENO);  
     dup2(cmd.out_fd, STDOUT_FILENO);
     if (cmd.fd_type == '!'){
@@ -220,6 +224,9 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
       std::cerr << "[open user pipe error]" << std::endl;
     }
 
+    // std::cout << "fd[WRITE] = " << up.fd[WRITE] << std::endl;
+    // std::cout << "fd[READ] = " << up.fd[READ] << std::endl;
+
     send_table.push_back(up);    
     cmds.back().out_fd = up.fd[WRITE];
 
@@ -334,8 +341,8 @@ int exec_cmds(std::pair<std::vector<Command>, std::string> parsed_cmd, ConnectIn
         int to = std::stoi(cmds[i].in_file.substr(14, 2));
         for (size_t j = 0; j < send_table.size(); j++){
           if (send_table[j].from == from && send_table[j].to == to){
-            close(send_table[j].fd[READ]);
-            close(send_table[j].fd[WRITE]);
+            // close(send_table[j].fd[READ]);
+            // close(send_table[j].fd[WRITE]);
             send_table[j] = send_table.back();
             send_table.pop_back();
             break;
