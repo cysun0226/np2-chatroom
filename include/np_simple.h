@@ -1,9 +1,6 @@
 #ifndef NP_SIMPLE_H
 #define NP_SIMPLE_H
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -11,15 +8,14 @@
 #include <unistd.h>
 #include <iostream>
 #include <sys/wait.h>
-#include <arpa/inet.h>
 #include <vector>
 #include <algorithm>
-#include <sys/shm.h>
-#include <sys/ipc.h>
 #include <fcntl.h> 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+
+#include "server.h"
 
 typedef struct {
     int id;
