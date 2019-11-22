@@ -297,7 +297,7 @@ void remove_user(User* user_table, int id){
                 }
 
                 file_name = "./user_pipe/" + file_name;
-                std::cout << "remove " << file_name << std::endl;
+                // std::cout << "remove " << file_name << std::endl;
                 int from = std::stoi(file_name.substr(12, 2));
                 int to = std::stoi(file_name.substr(14, 2));
                 if (to == id || from == id){
@@ -555,11 +555,13 @@ int main(int argc, char* argv[])
 
             std::string left_msg = \
             "*** User '" + std::string(get_user(user_id, user_table).name) + "' left. ***";
-            remove_user(user_table, user_id);
-            close(new_fd);
-            
-            
+
             std::cout << left_msg << std::endl;
+            
+            close(new_fd);
+            remove_user(user_table, user_id);
+            
+            
 
             broadcast(left_msg+"\n");
             kill(getppid(), SIGUSR1);
