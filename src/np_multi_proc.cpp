@@ -34,8 +34,21 @@ void close_handler(int s) {
     if (dp != NULL){
         while (ep = readdir(dp)){
             if (ep->d_type == DT_FIFO){
-                printf("remove %s\n", ep->d_name);
                 std::string file_name(ep->d_name);
+                bool to_delete = true;
+                for (size_t i = 0; i < file_name.size(); i++){
+                    if (std::isdigit(file_name.c_str()[i]) != true){
+                        to_delete = false;
+                        break;
+                    }
+                }
+
+                if (to_delete != true){
+                    continue;   
+                }
+
+                printf("remove %s\n", ep->d_name);
+                
                 file_name = "./user_pipe/" + file_name;
                 remove(file_name.c_str());
             }   
@@ -270,8 +283,21 @@ void remove_user(User* user_table, int id){
         while (ep = readdir(dp)){
             if (ep->d_type == DT_FIFO){
                 std::string file_name(ep->d_name);
+                
+                // check if is nfs file
+                bool to_delete = true;
+                for (size_t i = 0; i < file_name.size(); i++){
+                    if (std::isdigit(file_name.c_str()[i]) != true){
+                        to_delete = false;
+                        break;
+                    }
+                }
+                if (to_delete != true){
+                    continue;   
+                }
+
                 file_name = "./user_pipe/" + file_name;
-                // std::cout << file_name << std::endl;
+                std::cout << "remove " << file_name << std::endl;
                 int from = std::stoi(file_name.substr(12, 2));
                 int to = std::stoi(file_name.substr(14, 2));
                 if (to == id || from == id){
@@ -529,8 +555,9 @@ int main(int argc, char* argv[])
 
             std::string left_msg = \
             "*** User '" + std::string(get_user(user_id, user_table).name) + "' left. ***";
-            close(new_fd);
             remove_user(user_table, user_id);
+            close(new_fd);
+            
             
             std::cout << left_msg << std::endl;
 
