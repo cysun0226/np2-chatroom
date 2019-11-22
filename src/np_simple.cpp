@@ -24,8 +24,7 @@ int main(int argc, char* argv[])
     // regist the ctrl-c exit
     signal(SIGINT, close_handler);
 
-    int listen_fd = launch_server(port);
-    int client_fd;
+    int client_fd, listen_fd = launch_server(port);
 
     std::cout << "wait for connection..." << std::endl;
 
