@@ -89,32 +89,20 @@ void restore_user_env(int id){
 
 void remove_env_var(int id){
   // remove env var
-  std::cout << "user_env_size = " << user_env.size() << std::endl;
       for (size_t j = 0; j < user_env.size(); j++){
-std::cout << "user_env " << j << std::endl;
-        if (user_env[j].id == id){
-std::cout << "remove user_env" << std::endl;
-std::cout << user_env.at(j).id << std::endl;
-std::cout << user_env.back().id << std::endl;
-// std::cout << user_env.size() << std::endl;
-           user_env.at(j) = user_env.back();
-std::cout << "assign [j] = back" << std::endl;
+        if (user_env[j].id == id){;
+          // user_env.at(j) = user_env.back();
           // user_env.pop_back();
-//          user_env.erase(user_env.begin()+j);
-std::cout << "pop" << std::endl;
+          user_env.erase(user_env.begin()+j);
           break;
         }
       }
 }
 
 void remove_user(int id){
-  std::cout << "remove user pipe" << std::endl;
   remove_user_pipe(id);
-  std::cout << "remove user env" << std::endl;
   remove_env_var(id);
-  std::cout << "remove user pipe table" << std::endl;
   pipe_table_remove_user(id);
-  std::cout << "all delete" << std::endl;
   for (size_t i = 0; i < MAX_USER_NUM; i++){
         // std::cout << "user[i].id = " << user_table[i].id << " id = " << id << std::endl;
         if (user_table[i].id == id){
