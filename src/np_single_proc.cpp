@@ -1,6 +1,7 @@
 #include "../include/np_single_proc.h"
 #include "../include/npshell_single.h"
 #include "../include/execute_single.h"
+#include "../include/server.h"
 
 
 User user_table[MAX_USER_NUM];
@@ -8,7 +9,7 @@ std::vector<UserEnv> user_env;
 
 
 // user -------------------------------------------------------------------------
-int add_user(char* ip, char* port, int new_fd){
+int add_user(char* ip, char* port, int client_fd){
     int new_user_id;
     
     // find the smallest unused id
@@ -34,7 +35,7 @@ int add_user(char* ip, char* port, int new_fd){
             strcpy(user_table[i].ip, ip);
             strcpy(user_table[i].name, "(no name)");
             strcpy(user_table[i].port, port);
-            user_table[i].fd = new_fd;
+            user_table[i].fd = client_fd;
             break;
         }
     }
@@ -205,129 +206,66 @@ void tell(int from, int to, std::string msg){
 }
 
 
-// connect
-
-void *get_in_addr(struct sockaddr *sa)
-{
-  if (sa->sa_family == AF_INET) {
-    return &(((struct sockaddr_in*)sa)->sin_addr);
-  }
-
-  return &(((struct sockaddr_in6*)sa)->sin6_addr);
-}
-
+// main ----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
+  // check if input port
+    if (argc < 2) {
+        std::cout << "please input port!" << std::endl;
+        exit(0);
+    }
+  std::string port = argv[1];
+  
   // set PATH
   char default_path[] = "PATH=bin:.";
   putenv(default_path);
   
-  // server
+  // server data
+  // fd
   fd_set server_fd;
-  // fd of select
   fd_set client_fds;
-  int fdmax;
-
-  init_user_table();
-
-  int listener; // fd of listening socket
-  int new_fd; // accept() socket descriptor
-  struct sockaddr_storage client_addr;
-  socklen_t addrlen;
-
-  char client_input[MAX_INPUT_LENGTH];
-  int nbytes;
-
-  char remoteIP[INET6_ADDRSTRLEN];
-
-  int yes=1; // for SO_REUSEADDR
-  int i, j, rv;
-
-  struct addrinfo hints, *ai, *p;
-
   FD_ZERO(&server_fd);
   FD_ZERO(&client_fds);
+  int max_fd, client_fd;
+  // user
+  init_user_table();
+  struct sockaddr_storage client_addr;
+  char client_input[MAX_INPUT_LENGTH];
+  int user_input_size;
 
-  memset(&hints, 0, sizeof hints);
-  hints.ai_family = AF_UNSPEC;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags = AI_PASSIVE;
-
-  int port = std::stoi(argv[1]);
-  char* PORT = argv[1];
-
-  if ((rv = getaddrinfo(NULL, PORT, &hints, &ai)) != 0) {
-    fprintf(stderr, "select_server: %s\n", gai_strerror(rv));
-    exit(1);
-  }
-
-  for(p = ai; p != NULL; p = p->ai_next) {
-    listener = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-    if (listener < 0) {
-      continue;
-    }
-
-    setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
-
-    if (bind(listener, p->ai_addr, p->ai_addrlen) < 0) {
-      close(listener);
-      continue;
-    }
-
-    break;
-  }
-
-  // bind failed
-  if (p == NULL) {
-    fprintf(stderr, "select_server: failed to bind\n");
-    exit(2);
-  }
-
-  // free addrinfo
-  freeaddrinfo(ai);
-
-  // listen
-  if (listen(listener, MAX_USER_NUM) == -1) {
-    perror("listen");
-    exit(3);
-  }
-
-  // add listener to the server_fd
-  FD_SET(listener, &server_fd);
+  // launch server
+  int listener = launch_server(port);
+  FD_SET(listener, &server_fd); // add listener to the server_fd
 
   // keep track on the max fd
-  fdmax = listener;
+  max_fd = listener;
+
   std::cout << "wait for connection ... " << std::endl;
 
   // main loop
   while(true) {
+
     client_fds = server_fd;
 
-    int select_status = select(fdmax+1, &client_fds, NULL, NULL, NULL);
-
+    int select_status = select(max_fd+1, &client_fds, NULL, NULL, NULL);
     if (select_status == -1) {
-      // fprintf(stderr, "%s\n", explain_select(fdmax+1,
-      //   &client_fds, NULL, NULL, NULL));
-      // std::cout << "select error " << strerror(errno) << std::endl;
       continue;
-      // exit(4);
     }
 
     // find updated data in the current connections
-    for(i = 0; i <= fdmax; i++) {
-      if (FD_ISSET(i, &client_fds)) { // found
-        if (i == listener) {
+    for(int f = 0; f <= max_fd; f++) {
+      if (FD_ISSET(f, &client_fds)) { // found
+        if (f == listener) {
           // handle new connections
           socklen_t addr_size = sizeof client_addr;
-          new_fd = accept(listener, (struct sockaddr *)&client_addr, &addr_size);
+          client_fd = accept(listener, (struct sockaddr *)&client_addr, &addr_size);
 
-          if (new_fd == -1) {
-            perror("accept");
+          if (client_fd == -1) {
+            perror("server: accept");
             continue;
           } 
           // new user connect
           else {
-            
             // get client ip and port
             char ip_str[NI_MAXHOST];
             char port_str[NI_MAXSERV];
@@ -337,15 +275,15 @@ int main(int argc, char* argv[])
                 addr_size, ip_str, sizeof(ip_str), port_str, sizeof(port_str), 
                 NI_NUMERICHOST | NI_NUMERICSERV) == 0){
                 printf("select_server: got connection from %s:%s\n", ip_str, port_str);
-                new_user_id = add_user(ip_str, port_str, new_fd);
+                new_user_id = add_user(ip_str, port_str, client_fd);
             }
 
             // add new client to server_fd
-            FD_SET(new_fd, &server_fd);
+            FD_SET(client_fd, &server_fd);
 
             // keep track of the max fd
-            if (new_fd > fdmax) {
-              fdmax = new_fd;
+            if (client_fd > max_fd) {
+              max_fd = client_fd;
             }
 
             // add user env
@@ -359,7 +297,7 @@ int main(int argc, char* argv[])
             "****************************************\n"
             "** Welcome to the information server. **\n"
             "****************************************\n";
-            send(new_fd, welcome_msg.c_str(), welcome_msg.size(), 0);
+            send(client_fd, welcome_msg.c_str(), welcome_msg.size(), 0);
 
             // broadcast
             std::string login_msg;
@@ -368,34 +306,38 @@ int main(int argc, char* argv[])
             broadcast(login_msg);
             
             // first prompt
-            send(new_fd, "% ", 2, 0);
+            send(client_fd, "% ", 2, 0);
           }
         } 
 
         // client main
         else {
-            // connection close
-            if ((nbytes = recv(i, client_input, sizeof client_input, 0)) <= 0) {
+          // connection close
+          int recv_status = (user_input_size = recv(f, client_input, sizeof client_input, 0));
+          if (recv_status <= 0) {
             // got error or connection closed by client
-            if (nbytes == 0) {
-              printf("selectserver: socket %d left up\n", i);
+            if (user_input_size == 0) {
+              printf("server: socket %d left up\n", f);
               std::string left_msg = \
-                "*** User '" + std::string(get_user_by_fd(i).name) + "' left. ***\n";
+                "*** User '" + std::string(get_user_by_fd(f).name) + "' left. ***\n";
               broadcast(left_msg);
-            } else {
-              perror("recv");
+            } 
+            else {
+              perror("server: recv error");
             }
             // close connection
-            close(i);
+            close(f);
             // remove from server fd list
-            FD_CLR(i, &server_fd);
-            remove_user(get_user_by_fd(i).id);
+            FD_CLR(f, &server_fd);
+            remove_user(get_user_by_fd(f).id);
           }
+          
           // get input from user
           else{
+
             std::string usr_input(client_input);
-            
             memset(client_input, '\0', sizeof(client_input));
+
             // remove all \r \n in the input
             usr_input.erase(std::remove(usr_input.begin(), usr_input.end(), '\r'), usr_input.end());
             usr_input.erase(std::remove(usr_input.begin(), usr_input.end(), '\n'), usr_input.end());
@@ -403,11 +345,11 @@ int main(int argc, char* argv[])
             // save current stdout
             int save_stdout = dup(STDOUT_FILENO);
             int save_stderr = dup(STDERR_FILENO);
-            dup2(i, STDOUT_FILENO);
-            dup2(i, STDERR_FILENO);
+            dup2(f, STDOUT_FILENO);
+            dup2(f, STDERR_FILENO);
 
             // set user env
-            int user_id = get_user_by_fd(i).id;
+            int user_id = get_user_by_fd(f).id;
             set_user_env(user_id);
 
             // execute user
@@ -420,33 +362,27 @@ int main(int argc, char* argv[])
 
             // prompt
             if (status == SUCCESS){
-              send(i, "% ", 2, 0);
+              send(f, "% ", 2, 0);
             }
-            else{ // close pipe
+            // user exit, close pipe
+            else{ 
               std::string left_msg = \
-                "*** User '" + std::string(get_user_by_fd(i).name) + "' left. ***\n";
-
-dup2(save_stdout, STDOUT_FILENO);
-            dup2(save_stderr, STDERR_FILENO);
-
+                "*** User '" + std::string(get_user_by_fd(f).name) + "' left. ***\n";
               broadcast(left_msg);
+              close(f);
               remove_user(user_id);
-              close(i);
-              FD_CLR(i, &server_fd);
+              FD_CLR(f, &server_fd);
             }
-            
             
             // Restore stdout/err & env
             dup2(save_stdout, STDOUT_FILENO);
             dup2(save_stderr, STDERR_FILENO);
             restore_user_env(user_id);
-          }
-
-            
-        } // END handle data from client
-      } // END got new incoming connection
-    } // END looping through file descriptors
-  } // END for( ; ; )--and you thought it would never end!
+          }         
+        }
+      }
+    }
+  }
 
   return 0;
 }
