@@ -3,8 +3,10 @@
 all : np_simple np_single_proc np_multi_proc
 
 simple_obj = ./src/np_simple.o ./src/npshell.o ./src/parse.o ./src/execute.o ./src/server.o
-single_obj = ./src/np_single_proc.o ./src/npshell_single.o ./src/parse_single.o ./src/execute_single.o
-multi_obj = ./src/np_multi_proc.o ./src/npshell_multi.o ./src/parse_multi.o ./src/execute_multi.o ./src/server.o
+single_obj = ./src/np_single_proc.o ./src/npshell_single.o ./src/parse_single.o \
+             ./src/execute_single.o ./src/server.o
+multi_obj =  ./src/np_multi_proc.o ./src/npshell_multi.o ./src/parse_multi.o \
+             ./src/execute_multi.o ./src/server.o
 
 np_simple : $(simple_obj)
 	g++ -std=c++11 -g -o np_simple $(simple_obj)
