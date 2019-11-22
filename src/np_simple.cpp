@@ -18,49 +18,47 @@ void close_handler(int s) {
 
 int main(int argc, char* argv[])
 {
-    // regist the ctrl-c exit
-    signal(SIGINT, close_handler);
-    
-    int status;
-    int sockfd, new_fd;
-
-    // hints: specify the expected return type
-    struct addrinfo hints;
-
-    // servinfo: a pointer that point to a addrinfo
-    struct addrinfo *servinfo;
-    memset(&hints, 0, sizeof hints);
-
-    struct addrinfo *p;
-    struct sigaction sa; // signal action
-    int yes = 1;
-    
-    // IPv4
-    hints.ai_family = AF_INET;
-    // TCP
-    hints.ai_socktype = SOCK_STREAM; 
-    // use address in bind (listen)
-    hints.ai_flags = AI_PASSIVE; 
-
+    // check if input port
     if (argc < 2) {
         std::cout << "please input port!" << std::endl;
         exit(0);
     }
-    
     std::string PORT = argv[1];
+    
+    // regist the ctrl-c exit
+    signal(SIGINT, close_handler);
+
+    // hints: specify the expected return type
+    struct addrinfo hints;
+
+    // server_info: a pointer that point to a addrinfo
+    struct addrinfo *server_info;
+    memset(&hints, 0, sizeof hints);
+    
+    hints.ai_family = AF_INET; // IPv4
+    hints.ai_socktype = SOCK_STREAM; // TCP
+    hints.ai_flags = AI_PASSIVE; // use address in bind (listen)
 
     // build a socket, and bind to the given port
     int get_addr_info_status;
-    if ((get_addr_info_status = getaddrinfo(NULL, PORT.c_str(), &hints, &servinfo)) != 0) {
+    if ((get_addr_info_status = getaddrinfo(NULL, PORT.c_str(), &hints, &server_info)) != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(get_addr_info_status));
         return 1;
     }
 
+
+    int sockfd, client_fd;
+    struct addrinfo *p = server_info;
+    struct sigaction sa; // signal action
+    int yes = 1;
+
+    
+
     /* bind to the first available socket */
-    for(p = servinfo; p != NULL; p = p->ai_next) {
+    // for(p = server_info; p != NULL; p = p->ai_next) {
         if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0) {
             perror("server: can't open socket");
-            continue;
+            // continue;
         }
         // set SO_REUSEADDR
         if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) < 0) {
@@ -70,17 +68,17 @@ int main(int argc, char* argv[])
         if (bind(sockfd, p->ai_addr, p->ai_addrlen) < 0) {
             close(sockfd);
             perror("server: bind socket failed");
-            continue;
+            // continue;
         }
-        break;
-    }
+        // break;
+    // }
 
     if (p == NULL) {
         fprintf(stderr, "server: no available port\n");
         exit(1);
     }
 
-    freeaddrinfo(servinfo); // release the used addrinfo
+    freeaddrinfo(server_info); // release the used addrinfo
 
     // listen to the socket
     if (listen(sockfd, MAX_USER_NUM) < 0) {
@@ -107,12 +105,12 @@ int main(int argc, char* argv[])
 
     while (1){
         addr_size = sizeof client_addr;
-        new_fd = accept(sockfd, (struct sockaddr *)&client_addr, &addr_size);
-        if (new_fd < 0){
+        client_fd = accept(sockfd, (struct sockaddr *)&client_addr, &addr_size);
+        if (client_fd < 0){
             perror("server: open accept fd failed");
         }
 
-        if (new_fd < 0) {
+        if (client_fd < 0) {
             continue;
         }
         
@@ -127,7 +125,7 @@ int main(int argc, char* argv[])
         }
 
         // fork to handle connection
-        std::cout << "new_fd = " << new_fd << std::endl;
+        std::cout << "client_fd = " << client_fd << std::endl;
         pid_t pid = fork();
         
         if (pid == 0) // child process
@@ -138,7 +136,7 @@ int main(int argc, char* argv[])
             close(STDIN_FILENO);
             close(STDERR_FILENO);
 
-            if (dup(new_fd) != STDIN_FILENO || dup(new_fd) != STDOUT_FILENO || dup(new_fd) != STDERR_FILENO){
+            if (dup(client_fd) != STDIN_FILENO || dup(client_fd) != STDOUT_FILENO || dup(client_fd) != STDERR_FILENO){
                 std::cout << "can't dup socket to stdin/out/err" << std::endl;
                 exit(1);
             }
@@ -146,11 +144,11 @@ int main(int argc, char* argv[])
             // execute shell
             npshell();
 
-            close(new_fd);
+            close(client_fd);
             exit(0);
         }        
 
-        close(new_fd);        
+        close(client_fd);        
     }
 
     return 0;

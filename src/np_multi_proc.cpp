@@ -148,7 +148,7 @@ void receive_msg(int sig, siginfo_t *info, void *extra) {
        int to = act % 100;
        int from = ((act - to) / 100) % 100;
        User u = get_user(to, user_table);
-       std::cout << "from " << from << "to " << to << std::endl;
+       std::cout << "from " << from << " to " << to << std::endl;
        send(u.fd, tell_buf, std::string(tell_buf).size(), 0);
        return;
    }
@@ -416,11 +416,13 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    p = servinfo;
+
     /* bind to the first available socket */
-    for(p = servinfo; p != NULL; p = p->ai_next) {
+    // for(p = servinfo; p != NULL; p = p->ai_next) {
         if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0) {
             perror("server: can't open socket");
-            continue;
+            // continue;
         }
         // set SO_REUSEADDR
         if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) < 0) {
@@ -430,10 +432,10 @@ int main(int argc, char* argv[])
         if (bind(sockfd, p->ai_addr, p->ai_addrlen) < 0) {
             close(sockfd);
             perror("server: bind socket failed");
-            continue;
+            // continue;
         }
-        break;
-    }
+        // break;
+    // }
 
     if (p == NULL) {
         fprintf(stderr, "server: no available port\n");
@@ -557,7 +559,7 @@ int main(int argc, char* argv[])
             "*** User '" + std::string(get_user(user_id, user_table).name) + "' left. ***";
 
             std::cout << left_msg << std::endl;
-            
+
             close(new_fd);
             remove_user(user_table, user_id);
             
