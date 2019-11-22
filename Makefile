@@ -7,13 +7,13 @@ single_obj = ./src/np_single_proc.o ./src/npshell_single.o ./src/parse_single.o 
 multi_obj = ./src/np_multi_proc.o ./src/npshell_multi.o ./src/parse_multi.o ./src/execute_multi.o
 
 np_simple : $(simple_obj)
-	g++ -g -o np_simple $(simple_obj)
+	g++ -std=c++11 -g -o np_simple $(simple_obj)
 
 np_single_proc : $(single_obj)
-	g++ -g -o np_single_proc $(single_obj)
+	g++ -std=c++11 -g -o np_single_proc $(single_obj)
 
 np_multi_proc : $(multi_obj)
-	g++ -g -o np_multi_proc $(multi_obj)
+	g++ -std=c++11 -g -o np_multi_proc $(multi_obj)
 
 ./src/np_simple.o : ./include/np_simple.h
 ./src/npshell.o : ./include/npshell.h
@@ -32,8 +32,8 @@ np_multi_proc : $(multi_obj)
 
 .PHONY: clean
 clean :
-	rm np_simple
-	rm np_single_proc
-	rm np_multi_proc
-	rm ./src/*.o
+	rm -f np_simple
+	rm -f np_single_proc
+	rm -f np_multi_proc
+	rm -f  ./src/*.o
 
