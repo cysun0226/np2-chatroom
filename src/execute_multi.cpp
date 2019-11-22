@@ -208,30 +208,31 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
   }
 
   /* if write to user pipe */
-  if (cmds.back().fd_type == '}'){
-    int from = std::stoi(filename.substr(12, 2));
-    int to = std::stoi(filename.substr(14, 2));
+  for (size_t i = 0; i < cmds.size(); i++){
+    if (cmds[i].fd_type == '}'){
+      int from = std::stoi(cmds[i].out_file.substr(12, 2));
+      int to = std::stoi(cmds[i].out_file.substr(14, 2));
 
-    // open a fifo
-    create_named_pipe(from, to);
+      // open a fifo
+      create_named_pipe(from, to);
 
-    // send signal to the receiver
-    User to_user = get_user(to, info.user_table);
-    union sigval value;
-    value.sival_int = from*100 + to;
-    sigqueue(to_user.pid, SIGUSR2, value);
-    
-    int user_pipe_fd;
-    user_pipe_fd = open(filename.c_str(), O_WRONLY);
-    cmds.back().out_fd = user_pipe_fd;
+      // send signal to the receiver
+      User to_user = get_user(to, info.user_table);
+      union sigval value;
+      value.sival_int = from*100 + to;
+      sigqueue(to_user.pid, SIGUSR2, value);
+      
+      int user_pipe_fd;
+      user_pipe_fd = open(cmds[i].out_file.c_str(), O_WRONLY);
+      cmds[i].out_fd = user_pipe_fd;
 
-    // broacast build pipe
-    std::stringstream ss;
-    ss << "*** " << get_user(from, info.user_table).name << " (#" << from << ") just piped '"\
-    << info.usr_input << "' to " << get_user(to, info.user_table).name << " (#" << to << ") ***\n";
-    broadcast(ss.str());
+      // broacast build pipe
+      std::stringstream ss;
+      ss << "*** " << get_user(from, info.user_table).name << " (#" << from << ") just piped '"\
+      << info.usr_input << "' to " << get_user(to, info.user_table).name << " (#" << to << ") ***\n";
+      broadcast(ss.str());
+    }
   }
-
 
   /* Create required new pipes */
   for (size_t i = 0; i < cmds.size(); i++){
@@ -531,8 +532,8 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
   for (size_t i = 0; i < cmds.size(); i++) {
     // sender
     if (cmds[i].fd_type == '}'){
-      int from = std::stoi(out_file.substr(12, 2));
-      int to = std::stoi(out_file.substr(14, 2));
+      int from = std::stoi(cmds[i].out_file.substr(12, 2));
+      int to = std::stoi(cmds[i].out_file.substr(14, 2));
 
       // user not exist
       User to_user = get_user(to, info.user_table);
@@ -543,7 +544,7 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
       
       // if named pipe exist
       struct stat sb;
-      if (stat(out_file.c_str(), &sb) == 0){
+      if (stat(cmds[i].out_file.c_str(), &sb) == 0){
         std::cout << "*** Error: the pipe #" << from << "->#" \
         << to << " already exists. ***" << std::endl;
         return false;

@@ -211,30 +211,32 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
   }
 
   /* if write to user pipe */
-  if (cmds.back().fd_type == '}'){
-    int from = std::stoi(filename.substr(12, 2));
-    int to = std::stoi(filename.substr(14, 2));
+  for (size_t i = 0; i < cmds.size(); i++){
+    if (cmds[i].fd_type == '}'){
+      int from = std::stoi(cmds[i].out_file.substr(12, 2));
+      int to = std::stoi(cmds[i].out_file.substr(14, 2));
 
-    // open a pipe
-    SendPipe up;
-    up.from = from;
-    up.to = to;
-    
-    if (pipe(up.fd) < 0){
-      std::cerr << "[open user pipe error]" << std::endl;
+      // open a pipe
+      SendPipe up;
+      up.from = from;
+      up.to = to;
+      
+      if (pipe(up.fd) < 0){
+        std::cerr << "[open user pipe error]" << std::endl;
+      }
+
+      // std::cout << "fd[WRITE] = " << up.fd[WRITE] << std::endl;
+      // std::cout << "fd[READ] = " << up.fd[READ] << std::endl;
+
+      send_table.push_back(up);    
+      cmds.back().out_fd = up.fd[WRITE];
+
+      // broadcast user pipe create
+      std::stringstream ss;
+      ss << "*** " << get_user_by_id(from).name << " (#" << from << ") just piped '"\
+      << info.usr_input << "' to " << get_user_by_id(to).name << " (#" << to << ") ***\n";
+      broadcast(ss.str());
     }
-
-    // std::cout << "fd[WRITE] = " << up.fd[WRITE] << std::endl;
-    // std::cout << "fd[READ] = " << up.fd[READ] << std::endl;
-
-    send_table.push_back(up);    
-    cmds.back().out_fd = up.fd[WRITE];
-
-    // broadcast user pipe create
-    std::stringstream ss;
-    ss << "*** " << get_user_by_id(from).name << " (#" << from << ") just piped '"\
-    << info.usr_input << "' to " << get_user_by_id(to).name << " (#" << to << ") ***\n";
-    broadcast(ss.str());
   }
 
 
@@ -471,8 +473,8 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
   for (size_t i = 0; i < cmds.size(); i++) {
     // sender
     if (cmds[i].fd_type == '}'){
-      int from = std::stoi(out_file.substr(12, 2));
-      int to = std::stoi(out_file.substr(14, 2));
+      int from = std::stoi(cmds[i].out_file.substr(12, 2));
+      int to = std::stoi(cmds[i].out_file.substr(14, 2));
 
       // user not exist
       User to_user = get_user_by_id(to);

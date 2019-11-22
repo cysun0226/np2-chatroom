@@ -41,7 +41,7 @@ std::pair <std::vector<Command>, std::string> parse_cmd(std::string usr_input, C
                 int digit = 2;
                 std::string f_str = std::string(digit - std::to_string(info.id).length(), '0') + std::to_string(info.id);
                 std::string t_str = std::string(digit - str.substr(1).length(), '0') + str.substr(1);
-                out_file = "./user_pipe/" + f_str + t_str;
+                cmd.out_file = "./user_pipe/" + f_str + t_str;
                 cmd.fd_type = '}';
 
                 // if receive from other user
