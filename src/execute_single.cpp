@@ -30,7 +30,7 @@ void child_handler(int signo){
     while (waitpid(-1, &status, WNOHANG) > 0);
 }
 
-pid_t exec_cmd(Command cmd, bool last){
+pid_t exec_cmd(Command cmd, bool last, ConnectInfo info){
   int status;
   pid_t pid;
   bool fork_failed;
@@ -39,6 +39,17 @@ pid_t exec_cmd(Command cmd, bool last){
   // check if exit
   if (cmd.cmd == "exit"){
     return EXIT;
+  }
+  
+  // broadcast write to user pipe
+  if (cmd.out_file != ""){
+    int from = std::stoi(cmd.out_file.substr(12, 2));
+    int to = std::stoi(cmd.out_file.substr(14, 2));
+    // broadcast user pipe create
+    std::stringstream ss;
+    ss << "*** " << get_user_by_id(from).name << " (#" << from << ") just piped '"\
+       << info.usr_input << "' to " << get_user_by_id(to).name << " (#" << to << ") ***\n";
+    broadcast(ss.str());
   }
 
   // fork child process
@@ -128,6 +139,10 @@ pid_t exec_cmd(Command cmd, bool last){
     }
 
     // use signal handler to catch child that is not output to stdout
+    if (cmd.in_file != ""){
+      close(cmd.in_fd);
+    }
+
     if (cmd.out_fd != STDOUT_FILENO){
       if (last && cmd.fd_type=='>') {
         close(cmd.out_fd);
@@ -230,12 +245,6 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
 
       send_table.push_back(up);    
       cmds.back().out_fd = up.fd[WRITE];
-
-      // broadcast user pipe create
-      std::stringstream ss;
-      ss << "*** " << get_user_by_id(from).name << " (#" << from << ") just piped '"\
-      << info.usr_input << "' to " << get_user_by_id(to).name << " (#" << to << ") ***\n";
-      broadcast(ss.str());
     }
   }
 
@@ -320,7 +329,7 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
       }
 
       // execute
-      exec_cmd(cmds[i], i==cmds.size()-1);
+      exec_cmd(cmds[i], (i==cmds.size()-1), info);
   }
 
   
