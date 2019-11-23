@@ -470,6 +470,7 @@ void update_target(ConnectInfo info){
 // }
 
 bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo info){
+  bool exist = true;
   for (size_t i = 0; i < cmds.size(); i++) {
     // sender
     if (cmds[i].fd_type == '}'){
@@ -480,15 +481,16 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
       User to_user = get_user_by_id(to);
       if (to_user.id == -1){
         std::cout << "*** Error: user #" << to << " does not exist yet. ***" << std::endl;
-        return false;
+        exist = false;
       }
       
       // if named pipe exist
-      for (size_t i = 0; i < send_table.size(); i++){
-        if (send_table[i].to == to && send_table[i].from == from){
+      for (size_t j = 0; j < send_table.size(); j++){
+        if (send_table[j].to == to && send_table[j].from == from){
           std::cout << "*** Error: the pipe #" << from << "->#" \
           << to << " already exists. ***" << std::endl;
-          return false;
+          exist = false;
+          break;
         }
       }
     }
@@ -502,25 +504,29 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
       User from_user = get_user_by_id(from);
       if (from_user.id == -1){
         std::cout << "*** Error: user #" << from << " does not exist yet. ***" << std::endl;
-        return false;
+        exist = false;
       }
 
       // if named pipe exist
-      bool exist = false;
+      bool name_pipe_exist = false;
       for (size_t i = 0; i < send_table.size(); i++){
         if (send_table[i].to == info.id && send_table[i].from == from_user.id){
-          exist = true;
+          name_pipe_exist = true;
         }
       }
-      if (exist == false){
+      if (name_pipe_exist == false){
          std::cout << "*** Error: the pipe #" << from << "->#" \
           << to << " does not exist yet. ***" << std::endl;
-           return false;
+           exist = false;
       }
+    }
+
+    if(exist == false){
+      update_target(info);
     }
   }
   
-  return true;
+  return exist;
 }
 
 
