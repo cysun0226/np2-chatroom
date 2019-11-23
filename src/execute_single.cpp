@@ -510,7 +510,7 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
       if (from_user.id == -1){
         std::cout << "*** Error: user #" << from << " does not exist yet. ***" << std::endl;
         exist = false;
-        bool user_exist = false;  
+        user_exist = false;  
       }
 
       // if named pipe exist
