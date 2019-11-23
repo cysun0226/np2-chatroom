@@ -48,20 +48,6 @@ pid_t exec_cmd(Command cmd, bool last, ConnectInfo info){
     return EXIT;
   }
 
-  // broadcast if user pipe
-  // broadcast receive
-  if(cmd.out_file != ""){
-    int from = std::stoi(cmd.out_file.substr(12, 2));
-    int to = std::stoi(cmd.out_file.substr(14, 2));
-
-    // broacast build pipe
-    std::stringstream ss;
-    ss << "*** " << get_user(from, info.user_table).name << " (#" << from << ") just piped '"\
-    << info.usr_input << "' to " << get_user(to, info.user_table).name << " (#" << to << ") ***\n";
-    broadcast(ss.str());
-  }
-
-
   // fork child process
   pid = fork();
 
@@ -240,6 +226,12 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
       int user_pipe_fd;
       user_pipe_fd = open(cmds[i].out_file.c_str(), O_WRONLY);
       cmds[i].out_fd = user_pipe_fd;
+
+      // broacast build pipe
+      std::stringstream ss;
+      ss << "*** " << get_user(from, info.user_table).name << " (#" << from << ") just piped '"\
+      << info.usr_input << "' to " << get_user(to, info.user_table).name << " (#" << to << ") ***\n";
+      broadcast(ss.str());
     }
   }
 
