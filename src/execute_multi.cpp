@@ -51,10 +51,6 @@ pid_t exec_cmd(Command cmd, bool last, ConnectInfo info){
   // broadcast if user pipe
   // broadcast receive
   if(cmd.out_file != ""){
-    if(cmd.in_file != ""){
-      usleep(50000);
-    }
-
     int from = std::stoi(cmd.out_file.substr(12, 2));
     int to = std::stoi(cmd.out_file.substr(14, 2));
 
