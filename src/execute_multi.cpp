@@ -49,7 +49,20 @@ pid_t exec_cmd(Command cmd, bool last, ConnectInfo info){
   }
 
   // broadcast if user pipe
+  // broadcast receive
+  if(cmd.in_file != ""){
+      int from = std::stoi(cmd.in_file.substr(12, 2));
+      int to = std::stoi(cmd.in_file.substr(14, 2));
+      std::stringstream ss;
+      ss << "*** " << get_user(to, info.user_table).name << " (#" << to << ") just received from " \
+      << get_user(from, info.user_table).name << " (#" << from << ") by '" << info.usr_input << "' ***\n";
+      broadcast(ss.str());
+  }
   if(cmd.out_file != ""){
+    if(cmd.in_file != ""){
+      usleep(10000);
+    }
+
     int from = std::stoi(cmd.out_file.substr(12, 2));
     int to = std::stoi(cmd.out_file.substr(14, 2));
 
@@ -203,11 +216,6 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
       int from = std::stoi(cmds[i].in_file.substr(12, 2));
       int to = std::stoi(cmds[i].in_file.substr(14, 2));
       cmds[i].in_fd = user_pipe_table[from];
-      // broadcast receive
-      std::stringstream ss;
-      ss << "*** " << get_user(to, info.user_table).name << " (#" << to << ") just received from " \
-      << get_user(from, info.user_table).name << " (#" << from << ") by '" << info.usr_input << "' ***\n";
-      broadcast(ss.str());
     }
   }
   
