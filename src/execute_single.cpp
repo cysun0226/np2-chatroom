@@ -474,6 +474,7 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
   for (size_t i = 0; i < cmds.size(); i++) {
     // sender
     if (cmds[i].fd_type == '}'){
+      bool user_exist = true;
       int from = std::stoi(cmds[i].out_file.substr(12, 2));
       int to = std::stoi(cmds[i].out_file.substr(14, 2));
 
@@ -482,14 +483,17 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
       if (to_user.id == -1){
         std::cout << "*** Error: user #" << to << " does not exist yet. ***" << std::endl;
         exist = false;
+        user_exist = false;
       }
       
       // if named pipe exist
       for (size_t j = 0; j < send_table.size(); j++){
         if (send_table[j].to == to && send_table[j].from == from){
-          std::cout << "*** Error: the pipe #" << from << "->#" \
-          << to << " already exists. ***" << std::endl;
-          exist = false;
+          if(user_exist){
+            std::cout << "*** Error: the pipe #" << from << "->#" \
+            << to << " already exists. ***" << std::endl;
+            exist = false;
+          }
           break;
         }
       }
@@ -499,12 +503,14 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
     if (cmds[i].in_file != ""){
       int from = std::stoi(cmds[i].in_file.substr(12, 2));
       int to = std::stoi(cmds[i].in_file.substr(14, 2));
+      bool user_exist = true;
       
       // if user exist
       User from_user = get_user_by_id(from);
       if (from_user.id == -1){
         std::cout << "*** Error: user #" << from << " does not exist yet. ***" << std::endl;
         exist = false;
+        bool user_exist = false;  
       }
 
       // if named pipe exist
@@ -514,7 +520,7 @@ bool cmd_user_exist(std::vector<Command> cmds, std::string out_file, ConnectInfo
           name_pipe_exist = true;
         }
       }
-      if (name_pipe_exist == false){
+      if (name_pipe_exist == false && user_exist == true){
          std::cout << "*** Error: the pipe #" << from << "->#" \
           << to << " does not exist yet. ***" << std::endl;
            exist = false;
