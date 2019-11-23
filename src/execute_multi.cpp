@@ -60,7 +60,7 @@ pid_t exec_cmd(Command cmd, bool last, ConnectInfo info){
   }
   if(cmd.out_file != ""){
     if(cmd.in_file != ""){
-      usleep(10000);
+      usleep(50000);
     }
 
     int from = std::stoi(cmd.out_file.substr(12, 2));
