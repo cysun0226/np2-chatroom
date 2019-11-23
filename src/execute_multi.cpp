@@ -37,7 +37,7 @@ void receive_user_pipe(int sig, siginfo_t *info, void *extra) {
    }
 }
 
-pid_t exec_cmd(Command cmd, bool last){
+pid_t exec_cmd(Command cmd, bool last, ConnectInfo info){
   int status;
   pid_t pid;
   bool fork_failed;
@@ -47,6 +47,32 @@ pid_t exec_cmd(Command cmd, bool last){
   if (cmd.cmd == "exit"){
     return EXIT;
   }
+
+  // broadcast if user pipe
+  if(cmd.in_file != ""){
+    int from = std::stoi(cmd.in_file.substr(12, 2));
+    int to = std::stoi(cmd.in_file.substr(14, 2));
+
+    // broadcast receive
+    std::stringstream ss;
+    ss << "*** " << get_user(to, info.user_table).name << " (#" << to << ") just received from " \
+    << get_user(from, info.user_table).name << " (#" << from << ") by '" << info.usr_input << "' ***\n";
+    broadcast(ss.str());
+  }
+  if(cmd.out_file != ""){
+    if(cmd.in_file != ""){
+      usleep(100);
+    }
+    int from = std::stoi(cmd.out_file.substr(12, 2));
+    int to = std::stoi(cmd.out_file.substr(14, 2));
+
+    // broacast build pipe
+    std::stringstream ss;
+    ss << "*** " << get_user(from, info.user_table).name << " (#" << from << ") just piped '"\
+    << info.usr_input << "' to " << get_user(to, info.user_table).name << " (#" << to << ") ***\n";
+    broadcast(ss.str());
+  }
+
 
   // fork child process
   pid = fork();
@@ -131,6 +157,9 @@ pid_t exec_cmd(Command cmd, bool last){
     }
 
     // use signal handler to catch child that is not output to stdout
+    // if (cmd.in_file != ""){
+    //   close(cmd.in_fd);
+    // }
     if (cmd.out_fd != STDOUT_FILENO){
       if (last && cmd.fd_type=='>') {
         close(cmd.out_fd);
@@ -187,12 +216,6 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
       int from = std::stoi(cmds[i].in_file.substr(12, 2));
       int to = std::stoi(cmds[i].in_file.substr(14, 2));
       cmds[i].in_fd = user_pipe_table[from];
-
-      // broadcast receive
-      std::stringstream ss;
-      ss << "*** " << get_user(to, info.user_table).name << " (#" << to << ") just received from " \
-      << get_user(from, info.user_table).name << " (#" << from << ") by '" << info.usr_input << "' ***\n";
-      broadcast(ss.str());
     }
   }
   
@@ -225,12 +248,6 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
       int user_pipe_fd;
       user_pipe_fd = open(cmds[i].out_file.c_str(), O_WRONLY);
       cmds[i].out_fd = user_pipe_fd;
-
-      // broacast build pipe
-      std::stringstream ss;
-      ss << "*** " << get_user(from, info.user_table).name << " (#" << from << ") just piped '"\
-      << info.usr_input << "' to " << get_user(to, info.user_table).name << " (#" << to << ") ***\n";
-      broadcast(ss.str());
     }
   }
 
@@ -314,7 +331,7 @@ int build_pipe(std::vector<Command> &cmds, std::string filename, ConnectInfo inf
       }
 
       // execute
-      exec_cmd(cmds[i], i==cmds.size()-1);
+      exec_cmd(cmds[i], (i==cmds.size()-1), info);
   }
 
   
