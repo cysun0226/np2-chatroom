@@ -62,7 +62,7 @@ pid_t exec_cmd(Command cmd, bool last){
 
   switch (pid){
   // child
-  case 0:{
+  case 0: {
     // reditect I/O
     dup2(cmd.in_fd, STDIN_FILENO);  
     dup2(cmd.out_fd, STDOUT_FILENO);
@@ -137,7 +137,7 @@ pid_t exec_cmd(Command cmd, bool last){
         waitpid(pid, &status, 0);
       }
       else{
-        if (last && cmd.fd_type=='}') {
+        if (cmd.fd_type=='}') {
           close(cmd.out_fd);
         }
         signal(SIGCHLD, child_handler);

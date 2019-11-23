@@ -134,7 +134,7 @@ pid_t exec_cmd(Command cmd, bool last){
         waitpid(pid, &status, 0);
       }
       else{
-        if (last && cmd.fd_type=='}') {
+        if (cmd.fd_type == '}') {
           close(cmd.out_fd);
         }
         signal(SIGCHLD, child_handler);
